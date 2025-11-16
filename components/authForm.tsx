@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface AuthFormProps {
   mode: "login" | "register";
@@ -89,9 +90,9 @@ export default function AuthForm({ mode, buttonText, successMessage, linkText, l
 
         <p className="mt-6 text-center text-sm text-gray-600">
           {mode === "login" ? "Noch keinen Account?" : "Bereits einen Account?"}{" "}
-          <a href={linkHref} className="text-blue-500 font-medium hover:underline">
+          <Link href={linkHref} className="text-blue-500 font-medium hover:underline">
             {linkText}
-          </a>
+          </Link>
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Header from "@/components/header";
+import Link from "next/link";
 
 export default function WelcomePage() {
   return (
@@ -16,18 +17,18 @@ export default function WelcomePage() {
         </p>
 
         <div className="flex space-x-4">
-          <a
+          <Link
             href="/login"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Login
-          </a>
-          <a
+          </Link>
+          <Link
             href="/register"
             className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
           >
             Registrieren
-          </a>
+          </Link>
         </div>
       </main>
     </div>

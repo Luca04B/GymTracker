@@ -2,6 +2,7 @@
 "use client";
 
 import Header from "@/components/header";
+import Link from "next/link";
 
 interface ComingSoonProps {
   title?: string;
@@ -21,18 +22,18 @@ export default function ComingSoon({
         <p className="text-gray-700 mb-6 max-w-md">{subtitle}</p>
 
         <div className="flex space-x-4">
-          <a
+          <Link
             href="/welcome"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Zur Startseite
-          </a>
-          <a
+          </Link>
+          <Link
             href="/contact"
             className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
           >
             Kontakt
-          </a>
+          </Link>
         </div>
       </main>
     </div>
