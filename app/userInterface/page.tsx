@@ -51,7 +51,7 @@ export default function UserInterfacePage() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-10">
       <Header />
       <main className="max-w-2xl mx-auto mt-10 px-4 space-y-8">
         {profile && (
