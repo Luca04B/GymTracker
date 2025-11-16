@@ -2,19 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { collection, query, where, orderBy, getDocs, doc, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, getDocs, doc, getDoc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-// 🔹 Interface definieren
 interface Measurement {
   id: string;
   userId: string;
   weight: number;
-  height: number;
-  age: number;
-  createdAt?: any; // Firestore Timestamp
+  createdAt?: any;
 }
 
 export default function UserInterfacePage() {
@@ -24,48 +21,46 @@ export default function UserInterfacePage() {
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [editWeight, setEditWeight] = useState("");
-  const [editHeight, setEditHeight] = useState("");
-  const [editAge, setEditAge] = useState("");
+
+  const loadData = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    // --- USER PROFIL LADEN ---
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      setProfile(userSnap.data());
+    }
+
+    // --- ALLE MEASUREMENTS LADEN ---
+    const mQuery = query(
+      collection(db, "measurements"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "asc")
+    );
+    const mSnap = await getDocs(mQuery);
+    const mData: Measurement[] = mSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Measurement));
+    setMeasurements(mData);
+
+    // Letzte Gewichtsmessung in Edit-Feld setzen
+    if (mData.length) {
+      const last = mData[mData.length - 1];
+      setEditWeight(last.weight.toString());
+    }
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const user = auth.currentUser;
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-
-      // --- USER PROFIL LADEN ---
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) setProfile(userSnap.data());
-
-      // --- ALLE MEASUREMENTS LADEN ---
-      const mQuery = query(
-        collection(db, "measurements"),
-        where("userId", "==", user.uid),
-        orderBy("createdAt", "asc")
-      );
-      const mSnap = await getDocs(mQuery);
-      const mData: Measurement[] = mSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Measurement));
-      setMeasurements(mData);
-
-      // Letzte Messung in Edit-Felder setzen
-      if (mData.length) {
-        const last = mData[mData.length - 1];
-        setEditWeight(last.weight.toString());
-        setEditHeight(last.height.toString());
-        setEditAge(last.age.toString());
-      }
-
-      setLoading(false);
-    };
-
-    load();
+    loadData();
   }, [router]);
 
-  // 🔹 Neue Messung erstellen
-  const handleSave = async () => {
+  // 🔹 Neue Gewichtsmessung speichern
+  const handleSaveWeight = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
@@ -73,25 +68,19 @@ export default function UserInterfacePage() {
       const newMeasurement = {
         userId: user.uid,
         weight: Number(editWeight),
-        height: Number(editHeight),
-        age: Number(editAge),
         createdAt: serverTimestamp(),
       };
 
-      const newDoc = await addDoc(collection(db, "measurements"), newMeasurement);
+      const newDocRef = await addDoc(collection(db, "measurements"), newMeasurement);
 
       // State sofort aktualisieren
       setMeasurements((prev) => [
         ...prev,
-        { id: newDoc.id, ...newMeasurement, createdAt: new Date() }, // Temporärer Timestamp für Diagramm
+        { id: newDocRef.id, ...newMeasurement, createdAt: new Date() },
       ]);
-
-      // Edit-Felder leeren oder auf die neue Messung setzen
-      setEditWeight("");
-      setEditHeight("");
-      setEditAge("");
+      setEditWeight(newMeasurement.weight.toString());
     } catch (err) {
-      console.error("Fehler beim Speichern des Measurements:", err);
+      console.error("Fehler beim Speichern des Gewichts:", err);
       alert("Fehler beim Speichern. Prüfe Firestore Regeln.");
     }
   };
@@ -109,20 +98,24 @@ export default function UserInterfacePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-10">
       <Header />
       <main className="max-w-2xl mx-auto mt-10 px-4 space-y-8">
-        {/* Profil */}
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">
-            Willkommen zurück, {profile?.name ?? "User"} 👋
-          </h1>
-        </div>
 
-        {/* Neue Messung */}
+        {/* User-Karte */}
+        {profile && (
+          <div className="bg-white shadow-md rounded-lg p-6 space-y-2 text-gray-400 ">
+            <h2 className="text-xl font-semibold text-gray-700">Profil</h2>
+            <p><strong className="text-gray-600">Name:</strong> {profile.name}</p>
+            <p><strong className="text-gray-600">Alter:</strong> {profile.age} Jahre</p>
+            <p><strong className="text-gray-600">Größe:</strong> {profile.height} cm</p>
+          </div>
+        )}
+
+        {/* Neue Gewichtsmessung */}
         <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-700">Neue Messung</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <h2 className="text-xl font-semibold text-gray-700">Neue Gewichtsmessung</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
             <div>
               <label className="block text-gray-600 mb-1">Gewicht (kg)</label>
               <input
@@ -132,27 +125,9 @@ export default function UserInterfacePage() {
                 className="w-full px-3 py-2 border border-gray-300 text-gray-400 rounded-lg focus:ring-2 focus:ring-blue-400"
               />
             </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Größe (cm)</label>
-              <input
-                type="number"
-                value={editHeight}
-                onChange={(e) => setEditHeight(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 text-gray-400 rounded-lg focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Alter</label>
-              <input
-                type="number"
-                value={editAge}
-                onChange={(e) => setEditAge(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
           </div>
           <button
-            onClick={handleSave}
+            onClick={handleSaveWeight}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
             Speichern
@@ -164,25 +139,27 @@ export default function UserInterfacePage() {
           <div className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-700 mb-4">Gewichtsverlauf</h2>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={measurements}>
+              <LineChart
+                data={measurements.map((m) => ({
+                  ...m,
+                  createdAt: m.createdAt?.toDate ? m.createdAt.toDate() : m.createdAt,
+                }))}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="createdAt"
-                  tickFormatter={(ts) =>
-                    ts?.toDate ? ts.toDate().toLocaleDateString() : new Date(ts).toLocaleDateString()
-                  }
+                  tickFormatter={(ts) => ts instanceof Date ? ts.toLocaleDateString() : ""}
                 />
                 <YAxis />
                 <Tooltip
-                  labelFormatter={(ts) =>
-                    ts?.toDate ? ts.toDate().toLocaleString() : new Date(ts).toLocaleString()
-                  }
+                  labelFormatter={(ts) => ts instanceof Date ? ts.toLocaleString() : ""}
                 />
                 <Line type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
+
       </main>
     </div>
   );

@@ -20,14 +20,13 @@ export default function CreateProfilePage() {
 
     try {
       // 1️⃣ User-Dokument (nur Name, einmalig)
-      await setDoc(doc(db, "users", user.uid), { name });
+      await setDoc(doc(db, "users", user.uid), { name: name, height: Number(height),
+        age: Number(age) });
 
       // 2️⃣ Measurement-Dokument (immer neu)
       await addDoc(collection(db, "measurements"), {
         userId: user.uid,   // wichtig für die Rules
         weight: Number(weight),
-        height: Number(height),
-        age: Number(age),
         createdAt: serverTimestamp(),
       });
 
