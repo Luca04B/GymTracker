@@ -7,12 +7,22 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
+// 🔹 Interface definieren
+interface Measurement {
+  id: string;
+  userId: string;
+  weight: number;
+  height: number;
+  age: number;
+  createdAt?: any; // Firestore Timestamp
+}
+
 export default function UserInterfacePage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  const [measurements, setMeasurements] = useState<any[]>([]);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [editWeight, setEditWeight] = useState("");
   const [editHeight, setEditHeight] = useState("");
   const [editAge, setEditAge] = useState("");
@@ -20,7 +30,6 @@ export default function UserInterfacePage() {
   useEffect(() => {
     const load = async () => {
       const user = auth.currentUser;
-
       if (!user) {
         router.push("/login");
         return;
@@ -38,15 +47,15 @@ export default function UserInterfacePage() {
         orderBy("createdAt", "asc")
       );
       const mSnap = await getDocs(mQuery);
-      const mData = mSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const mData: Measurement[] = mSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Measurement));
       setMeasurements(mData);
 
       // Letzte Messung in Edit-Felder setzen
       if (mData.length) {
         const last = mData[mData.length - 1];
-        setEditWeight(last.weight);
-        setEditHeight(last.height);
-        setEditAge(last.age);
+        setEditWeight(last.weight.toString());
+        setEditHeight(last.height.toString());
+        setEditAge(last.age.toString());
       }
 
       setLoading(false);
@@ -55,32 +64,32 @@ export default function UserInterfacePage() {
     load();
   }, [router]);
 
-  // 🔹 Immer neue Messung speichern
+  // 🔹 Neue Messung erstellen
   const handleSave = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
     try {
-      const newDoc = await addDoc(collection(db, "measurements"), {
+      const newMeasurement = {
         userId: user.uid,
         weight: Number(editWeight),
         height: Number(editHeight),
         age: Number(editAge),
         createdAt: serverTimestamp(),
-      });
+      };
 
-      // State sofort aktualisieren, damit Diagramm direkt aktualisiert wird
+      const newDoc = await addDoc(collection(db, "measurements"), newMeasurement);
+
+      // State sofort aktualisieren
       setMeasurements((prev) => [
         ...prev,
-        {
-          id: newDoc.id,
-          userId: user.uid,
-          weight: Number(editWeight),
-          height: Number(editHeight),
-          age: Number(editAge),
-          createdAt: new Date(), // vorläufig, Firestore timestamp wird später geladen
-        },
+        { id: newDoc.id, ...newMeasurement, createdAt: new Date() }, // Temporärer Timestamp für Diagramm
       ]);
+
+      // Edit-Felder leeren oder auf die neue Messung setzen
+      setEditWeight("");
+      setEditHeight("");
+      setEditAge("");
     } catch (err) {
       console.error("Fehler beim Speichern des Measurements:", err);
       alert("Fehler beim Speichern. Prüfe Firestore Regeln.");
@@ -110,10 +119,9 @@ export default function UserInterfacePage() {
           </h1>
         </div>
 
-        {/* Messungen eingeben */}
+        {/* Neue Messung */}
         <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-700">Neue Messung</h2>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-gray-600 mb-1">Gewicht (kg)</label>
@@ -139,11 +147,10 @@ export default function UserInterfacePage() {
                 type="number"
                 value={editAge}
                 onChange={(e) => setEditAge(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 text-gray-400 rounded-lg focus:ring-2 focus:ring-blue-400"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 focus:ring-2 focus:ring-blue-400"
               />
             </div>
           </div>
-
           <button
             onClick={handleSave}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
