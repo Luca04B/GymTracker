@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function Header() {
   const router = useRouter();
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
   const handleLogout = async () => {
     try {
@@ -32,14 +33,15 @@ export default function Header() {
       </div>
 
       <nav className="flex items-center gap-4">
-        <button type="button" onClick={handleUserInterface}>
-          <Image
-            src="/user.png"
-            alt="User"
-            width={40}
-            height={40}
-          />
-        </button>
+      <a href={`${basePath}/userinterface`}>
+  <Image
+    src={`${basePath}/user.png`}
+    alt="User"
+    width={40}
+    height={40}
+    unoptimized
+  />
+</a>
 
         <button
           onClick={handleLogout}
