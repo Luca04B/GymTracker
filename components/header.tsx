@@ -7,7 +7,6 @@ import Link from "next/link";
 
 export default function Header() {
   const router = useRouter();
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
   const handleLogout = async () => {
     try {
@@ -36,7 +35,7 @@ export default function Header() {
       <nav className="flex items-center gap-4">
       <Link href='/userinterface'>
       <Image
-        src='/user.png'
+        src='/GymTracker/user.png'
         alt="User"
         width={40}
         height={40}
