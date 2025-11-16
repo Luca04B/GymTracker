@@ -1,11 +1,9 @@
 "use client";
 
-import ComingSoon from "@/components/commingSoon";
+import { redirect } from 'next/navigation';
 
 export default function UserInterfacePage() {
   return (
-    <div>
-      <ComingSoon />
-    </div>
+      redirect('/createProfile')
   );
 }

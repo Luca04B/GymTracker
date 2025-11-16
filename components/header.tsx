@@ -17,7 +17,7 @@ export default function Header() {
   };
 
   const handleUserInterface = () => {
-    router.push("/userinterface");
+    router.push("/userInterface");
   };
 
   return (
