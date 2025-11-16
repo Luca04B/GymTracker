@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Header() {
   const router = useRouter();
@@ -33,15 +34,15 @@ export default function Header() {
       </div>
 
       <nav className="flex items-center gap-4">
-      <a href={`${basePath}/userinterface`}>
-  <Image
-    src={`${basePath}/user.png`}
-    alt="User"
-    width={40}
-    height={40}
-    unoptimized
-  />
-</a>
+      <Link href='/userinterface'>
+      <Image
+        src='/user.png'
+        alt="User"
+        width={40}
+        height={40}
+        unoptimized
+      />
+    </Link>
 
         <button
           onClick={handleLogout}
