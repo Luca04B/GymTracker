@@ -18,10 +18,6 @@ export default function Header() {
     }
   };
 
-  const handleUserInterface = () => {
-    router.push("/userInterface");
-  };
-
   return (
     <header className="w-full bg-white shadow-md p-4 flex justify-between items-center">
       <div className="flex items-center gap-3">
@@ -34,7 +30,7 @@ export default function Header() {
       </div>
 
       <nav className="flex items-center gap-4">
-      <Link href='/userinterface'>
+      <Link href='/checkUserPage'>
       <Image
         src={getAssetPath("/user.png")}
         alt="User"

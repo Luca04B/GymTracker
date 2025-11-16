@@ -18,19 +18,24 @@ export default function CreateProfilePage() {
     const user = auth.currentUser;
     if (!user) return;
 
-    // 1️⃣ User-Dokument (nur Name, einmalig)
-    await setDoc(doc(db, "users", user.uid), { name });
+    try {
+      // 1️⃣ User-Dokument (nur Name, einmalig)
+      await setDoc(doc(db, "users", user.uid), { name });
 
-    // 2️⃣ Measurement-Dokument (immer neu)
-    await addDoc(collection(db, "measurements"), {
-      userId: user.uid,
-      weight,
-      height,
-      age,
-      createdAt: serverTimestamp(),
-    });
+      // 2️⃣ Measurement-Dokument (immer neu)
+      await addDoc(collection(db, "measurements"), {
+        userId: user.uid,   // wichtig für die Rules
+        weight: Number(weight),
+        height: Number(height),
+        age: Number(age),
+        createdAt: serverTimestamp(),
+      });
 
-    router.push("/userInterface");
+      router.push("/userInterface");
+    } catch (err) {
+      console.error("Fehler beim Speichern:", err);
+      alert("Fehler beim Speichern der Daten. Bitte prüfe die Eingaben oder Firestore Rules.");
+    }
   };
 
   return (
@@ -50,6 +55,7 @@ export default function CreateProfilePage() {
             onChange={(e) => setName(e.target.value)}
             className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
           <input
             type="number"
             placeholder="Gewicht (kg)"
@@ -57,6 +63,7 @@ export default function CreateProfilePage() {
             onChange={(e) => setWeight(e.target.value)}
             className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
           <input
             type="number"
             placeholder="Größe (cm)"
@@ -64,6 +71,7 @@ export default function CreateProfilePage() {
             onChange={(e) => setHeight(e.target.value)}
             className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
           <input
             type="number"
             placeholder="Alter"
