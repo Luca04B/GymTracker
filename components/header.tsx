@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function Header() {
   const router = useRouter();
@@ -18,22 +17,25 @@ export default function Header() {
   };
 
   const handleUserInterface = () => {
-    router.push("/userInterface");
+    router.push("/userinterface");
   };
 
   return (
     <header className="w-full bg-white shadow-md p-4 flex justify-between items-center">
       <div className="flex items-center gap-3">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-        <Link href="/welcome">GymTracker</Link>
+        <h1
+          onClick={() => router.push("/welcome")}
+          className="text-xl sm:text-2xl font-bold text-gray-800 cursor-pointer"
+        >
+          GymTracker
         </h1>
       </div>
 
-      <nav className="flex gap-4 items-center">
-        <button onClick={handleUserInterface}>
+      <nav className="flex items-center gap-4">
+        <button type="button" onClick={handleUserInterface}>
           <Image
             src="/user.png"
-            alt="GymTracker User"
+            alt="User"
             width={40}
             height={40}
           />
