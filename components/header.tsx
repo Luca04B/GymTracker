@@ -4,6 +4,7 @@ import Image from "next/image";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getAssetPath } from "@/lib/getAssetPath";
 
 export default function Header() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function Header() {
       <nav className="flex items-center gap-4">
       <Link href='/userinterface'>
       <Image
-        src='/GymTracker/user.png'
+        src={getAssetPath("/user.png")}
         alt="User"
         width={40}
         height={40}
