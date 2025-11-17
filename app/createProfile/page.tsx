@@ -41,7 +41,7 @@ export default function CreateProfilePage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="flex flex-col items-center justify-center mt-20 px-4 text-center">
+      <main className="flex flex-col items-center justify-center mt-18 px-4 text-center">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
           Profil anlegen
         </h1>

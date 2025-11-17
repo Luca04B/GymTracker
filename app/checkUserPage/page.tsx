@@ -44,9 +44,9 @@ export default function CheckUserPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-hidden">
       <Header />
-      <main className="flex flex-col items-center justify-center mt-20">
+      <main className="flex flex-col items-center justify-center mt-18">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
           <p className="text-gray-600 text-lg mt-6">Profil wird geladen...</p>

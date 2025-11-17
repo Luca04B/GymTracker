@@ -10,11 +10,20 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/loadingSpinner";
+import TrainingPlanList from "@/components/trainingPlanList";
+
 
 interface Exercise {
   id: string;
   name: string;
   factor: number;
+}
+
+interface TrainingPlan {
+  id: string;
+  name: string;
+  items: any[];
+  createdAt: any;
 }
 
 export default function WelcomePage() {
@@ -24,12 +33,16 @@ export default function WelcomePage() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         setLoadingProfile(false);
         setLoadingExercises(false);
+        setLoadingPlans(false);
         return;
       }
 
@@ -73,6 +86,18 @@ export default function WelcomePage() {
       } finally {
         setLoadingExercises(false);
       }
+
+       // Plan laden 
+    setLoadingPlans(true);
+     try {
+      const planSnap = await getDocs(collection(db, "users", user.uid, "trainingPlans"));
+      const plansList = planSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as TrainingPlan[];
+      setTrainingPlans(plansList);
+    } catch (err) {
+      console.error("Fehler beim Laden der Trainingspläne:", err);
+    } finally {
+      setLoadingPlans(false);
+    }
     });
 
     return () => unsubscribe();
@@ -125,20 +150,40 @@ export default function WelcomePage() {
             </div>
           ) : null}
         </div>
+        
+       {/* Trainingsplan & Übungen nebeneinander */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 text-gray-800">
+          {/* Linke Spalte: Trainingspläne */}
+          <div className="flex-3 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
+            {loadingPlans ? (
+              <div className="flex justify-center"><LoadingSpinner /></div>
+            ) : trainingPlans.length === 0 ? (
+              <p className="text-gray-500 text-center">Noch keine Trainingspläne vorhanden.</p>
+            ) : (
+              <TrainingPlanList
+                plans={trainingPlans}
+                loading={loadingPlans}
+                onSelectPlan={(plan) => {
+                  router.push(`/trainingPlan`);
+                }}
+              />
+            )}
+          </div>
 
-        {/* Übungen Liste */}
-        <div 
-         onClick={goToExcersice} 
-         className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer max-w-xs sm:max-w-full"
+          {/* Rechte Spalte: Übungen */}
+          <div 
+            onClick={goToExcersice} 
+            className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
-          {loadingExercises ? (
-            <div className="flex justify-center"><LoadingSpinner /></div>
-          ) : exercises.length === 0 ? (
-            <p className="text-gray-500">Keine Übungen gefunden.</p>
-          ) : (
-            <MyExerciseList exercises={exercises} />
-          )}
-        </div>
+            {loadingExercises ? (
+              <div className="flex justify-center"><LoadingSpinner /></div>
+            ) : exercises.length === 0 ? (
+              <p className="text-gray-500">Keine Übungen gefunden.</p>
+            ) : (
+              <MyExerciseList exercises={exercises} />
+            )}
+          </div>
+</div>
 
         {/* Login/Register Buttons für nicht eingeloggte Nutzer */}
         {!profile && !loadingProfile && (

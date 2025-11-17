@@ -30,7 +30,7 @@ export default function WeightChart({ measurements }: WeightChartProps) {
           <Tooltip
             labelFormatter={(ts) => ts instanceof Date ? ts.toLocaleString() : ""}
           />
-          <Line type="monotone" dataKey="weight" stroke="#3b82f6" strokeWidth={2} />
+          <Line type="monotone" dataKey="weight" stroke="#66CDAA" strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>
     </div>

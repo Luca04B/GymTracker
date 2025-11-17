@@ -233,226 +233,228 @@ export default function ExercisesPage() {
   // -----------------------------------------
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Header />
 
       <main className="p-4 sm:p-6 lg:p-10 mt-20 max-w-5xl mx-auto text-gray-600">
+        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
 
-        {/* MAIN LOADING */}
-        {loadingMain ? (
-          <div className="flex justify-center mt-20">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <>
-            {/* Toggle */}
-            <div className="flex justify-center gap-4 mb-6">
-              <button
-                onClick={() => {
-                  setView("private");
-                  setShowForm(false);
-                  setEditMode(false);
-                }}
-                className={`px-4 py-2 rounded-lg ${
-                  view === "private"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800"
-                }`}
-              >
-                Meine Übungen
-              </button>
-              <button
-                onClick={() => {
-                  setView("public");
-                  setShowForm(false);
-                  setEditMode(false);
-                }}
-                className={`px-4 py-2 rounded-lg ${
-                  view === "public"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800"
-                }`}
-              >
-                Öffentliche Übungen
-              </button>
+          {/* MAIN LOADING */}
+          {loadingMain ? (
+            <div className="flex justify-center mt-20">
+              <LoadingSpinner />
             </div>
-
-            {/* Neue Übung */}
-            {view === "private" && (
-              <div className="flex justify-center mb-6">
-                <button
-                  onClick={() => setShowForm(!showForm)}
-                  className="bg-blue-600 text-white px-5 py-3 rounded-xl shadow-md hover:bg-blue-700 transition font-medium"
-                >
-                  Neue Übung
-                </button>
-              </div>
-            )}
-
-            {showForm && (
-              <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
-                <input
-                  className="w-full border border-gray-300 rounded-lg p-2 mb-3"
-                  placeholder="Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <input
-                  type="number"
-                  className="w-full border border-gray-300 rounded-lg p-2 mb-3"
-                  placeholder="Faktor"
-                  min={0.1}
-                  step={0.1}
-                  value={factor}
-                  onChange={(e) => setFactor(Number(e.target.value))}
-                />
-                <button
-                  onClick={addExercise}
-                  className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                >
-                  Speichern
-                </button>
-              </div>
-            )}
-
-            {/* Edit Mode */}
-           {view === "private" && (
-              <div className="flex justify-end mb-4">
+          ) : (
+            <>
+              {/* Toggle */}
+              <div className="flex justify-center gap-4 mb-6">
                 <button
                   onClick={() => {
-                    if (editMode) {
-                      // Bearbeiten beenden ohne speichern → reload
-                      loadExercises();
-                    }
-                    setEditMode(!editMode);
+                    setView("private");
                     setShowForm(false);
+                    setEditMode(false);
                   }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className={`px-4 py-2 rounded-lg ${
+                    view === "private"
+                      ? "bg-sky-600 text-white font-semibold"
+                      : "bg-slate-300 text-gray-800"
+                  }`}
                 >
-                  {editMode ? "Bearbeiten beenden" : "Bearbeiten"}
+                  Meine Übungen
                 </button>
-              </div>
-            )}
-
-            {/* Exercises Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {exercises.map((ex, idx) => (
-                <div
-                  key={ex.id}
-                  className="relative bg-white p-5 rounded-xl shadow-md border border-gray-200"
-                >
-                  {/* Delete */}
-                  {!editMode && (
-                    <button
-                      onClick={() => setDeleteId(ex.id)}
-                      className="absolute top-3 right-3 text-red-500 hover:text-red-700 font-bold text-lg"
-                    >
-                      ×
-                    </button>
-                  )}
-
-                  {view === "private" && editMode ? (
-                    <>
-                      <input
-                        className="border border-gray-300 rounded-lg p-2 mb-2 w-full"
-                        value={ex.name}
-                        onChange={(e) => {
-                          const updated = [...exercises];
-                          updated[idx].name = e.target.value;
-                          setExercises(updated);
-                        }}
-                      />
-                      <input
-                        type="number"
-                        min={0.1}
-                        step={0.1}
-                        className="border border-gray-300 rounded-lg p-2 w-full"
-                        value={ex.factor}
-                        onChange={(e) => {
-                          const updated = [...exercises];
-                          updated[idx].factor = Number(e.target.value);
-                          setExercises(updated);
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                        {ex.name}
-                      </h3>
-                      <p className="text-gray-700">Faktor: {ex.factor}</p>
-
-                      {ex.collection === "public" && (
-                        <button
-                          onClick={() => makePrivate(ex)}
-                          className="mt-2 mr-2 px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                          Privat machen
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {view === "private" && !editMode && (
-                    <button
-                      onClick={() => publishExercise(ex)}
-                      className="mt-3 px-3 py-1 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                    >
-                      Veröffentlichen
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Save Button */}
-            {editMode && (
-              <div className="flex justify-end mt-6">
                 <button
-                  onClick={saveAll}
-                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+                  onClick={() => {
+                    setView("public");
+                    setShowForm(false);
+                    setEditMode(false);
+                  }}
+                  className={`px-4 py-2 rounded-lg ${
+                    view === "public"
+                      ? "bg-sky-600 text-white font-semibold"
+                      : "bg-slate-300 text-gray-800"
+                  }`}
                 >
-                  Änderungen speichern
+                  Öffentliche Übungen
                 </button>
               </div>
-            )}
 
-            {/* Delete Dialog */}
-            {deleteId && (
-              <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
-                <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl text-center">
-                  <h2 className="text-xl font-semibold mb-4">Übung löschen?</h2>
-                  <p className="text-gray-700 mb-6">
-                    Willst du diese Übung wirklich löschen?
-                  </p>
-                  <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={() => setDeleteId(null)}
-                      className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
-                    >
-                      Abbrechen
-                    </button>
-                    <button
-                      onClick={confirmDelete}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      Löschen
-                    </button>
+              {/* Neue Übung */}
+              {view === "private" && (
+                <div className="flex justify-center mb-6">
+                  <button
+                    onClick={() => setShowForm(!showForm)}
+                    className="bg-sky-600 text-white px-5 py-3 rounded-xl shadow-md hover:bg-sky-800 transition font-medium"
+                  >
+                    Neue Übung
+                  </button>
+                </div>
+              )}
+
+              {showForm && (
+                <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
+                  <input
+                    className="w-full border border-gray-300 rounded-lg p-2 mb-3"
+                    placeholder="Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    className="w-full border border-gray-300 rounded-lg p-2 mb-3"
+                    placeholder="Faktor"
+                    min={0.1}
+                    step={0.1}
+                    value={factor}
+                    onChange={(e) => setFactor(Number(e.target.value))}
+                  />
+                  <button
+                    onClick={addExercise}
+                    className="w-full bg-emerald-400 hover:bg-emerald-600 text-white py-2 rounded-lg"
+                  >
+                    Speichern
+                  </button>
+                </div>
+              )}
+
+              {/* Edit Mode */}
+            {view === "private" && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={() => {
+                      if (editMode) {
+                        // Bearbeiten beenden ohne speichern → reload
+                        loadExercises();
+                      }
+                      setEditMode(!editMode);
+                      setShowForm(false);
+                    }}
+                    className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-800"
+                  >
+                    {editMode ? "Bearbeiten beenden" : "Bearbeiten"}
+                  </button>
+                </div>
+              )}
+
+              {/* Exercises Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {exercises.map((ex, idx) => (
+                  <div
+                    key={ex.id}
+                    className="relative bg-white p-5 rounded-xl shadow-md border border-gray-200"
+                  >
+                    {/* Delete */}
+                    {!editMode && (
+                      <button
+                        onClick={() => setDeleteId(ex.id)}
+                        className="absolute top-3 right-3 text-red-500 hover:text-red-700 font-bold text-lg"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {view === "private" && editMode ? (
+                      <>
+                        <input
+                          className="border border-gray-300 rounded-lg p-2 mb-2 w-full"
+                          value={ex.name}
+                          onChange={(e) => {
+                            const updated = [...exercises];
+                            updated[idx].name = e.target.value;
+                            setExercises(updated);
+                          }}
+                        />
+                        <input
+                          type="number"
+                          min={0.1}
+                          step={0.1}
+                          className="border border-gray-300 rounded-lg p-2 w-full"
+                          value={ex.factor}
+                          onChange={(e) => {
+                            const updated = [...exercises];
+                            updated[idx].factor = Number(e.target.value);
+                            setExercises(updated);
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                          {ex.name}
+                        </h3>
+                        <p className="text-gray-700">Faktor: {ex.factor}</p>
+
+                        {ex.collection === "public" && (
+                          <button
+                            onClick={() => makePrivate(ex)}
+                            className="mt-2 mr-2 px-3 py-1 text-sm bg-emerald-400 text-white rounded-lg hover:bg-emerald-600"
+                          >
+                            Privat machen
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {view === "private" && !editMode && (
+                      <button
+                        onClick={() => publishExercise(ex)}
+                        className="mt-3 px-3 py-1 text-sm bg-emerald-400 text-white rounded-lg hover:bg-emerald-600"
+                      >
+                        Veröffentlichen
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Save Button */}
+              {editMode && (
+                <div className="flex justify-end mt-6">
+                  <button
+                    onClick={saveAll}
+                    className="bg-emerald-400 text-white px-6 py-3 rounded-lg hover:bg-emerald-600"
+                  >
+                    Änderungen speichern
+                  </button>
+                </div>
+              )}
+
+              {/* Delete Dialog */}
+              {deleteId && (
+                <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl text-center">
+                    <h2 className="text-xl font-semibold mb-4">Übung löschen?</h2>
+                    <p className="text-gray-700 mb-6">
+                      Willst du diese Übung wirklich löschen?
+                    </p>
+                    <div className="flex gap-4 justify-center">
+                      <button
+                        onClick={() => setDeleteId(null)}
+                        className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        onClick={confirmDelete}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        Löschen
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Toast */}
-            {toast && (
-              <Toast
-                message={toast.message}
-                type={toast.type as any}
-                onClose={() => setToast(null)}
-              />
-            )}
-          </>
-        )}
+              {/* Toast */}
+              {toast && (
+                <Toast
+                  message={toast.message}
+                  type={toast.type as any}
+                  onClose={() => setToast(null)}
+                />
+              )}
+            </>
+          )}
+          </div>
       </main>
     </div>
   );

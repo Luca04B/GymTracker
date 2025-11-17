@@ -51,7 +51,7 @@ export default function MeasurementForm({ onNewMeasurement }: MeasurementFormPro
       </div>
       <button
         onClick={handleSave}
-        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+        className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-800 transition-colors"
       >
         Speichern
       </button>
