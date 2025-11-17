@@ -19,7 +19,19 @@
   }
 }
 
-body {
+html, body {
+  margin: 0;
+  padding: 0;
+
+  /* Fix für iPhone Notch + Home Indicator */
+  padding-bottom: env(safe-area-inset-bottom);
+
+  /* Entfernt den schwarzen Rand endgültig */
+  min-height: 100vh;
+  min-height: 100dvh; /* iOS 16+ */
+  height: 100%;
+  width: 100%;
+
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
