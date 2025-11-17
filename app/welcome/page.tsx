@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/loadingSpinner";
 import TrainingPlanList from "@/components/trainingPlanList";
 
-
 interface Exercise {
   id: string;
   name: string;
@@ -35,7 +34,6 @@ export default function WelcomePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
-
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -87,25 +85,25 @@ export default function WelcomePage() {
         setLoadingExercises(false);
       }
 
-       // Plan laden 
-    setLoadingPlans(true);
-     try {
-      const planSnap = await getDocs(collection(db, "users", user.uid, "trainingPlans"));
-      const plansList = planSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as TrainingPlan[];
-      setTrainingPlans(plansList);
-    } catch (err) {
-      console.error("Fehler beim Laden der Trainingspläne:", err);
-    } finally {
-      setLoadingPlans(false);
-    }
+      // Plan laden 
+      setLoadingPlans(true);
+      try {
+        const planSnap = await getDocs(collection(db, "users", user.uid, "trainingPlans"));
+        const plansList = planSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as TrainingPlan[];
+        setTrainingPlans(plansList);
+      } catch (err) {
+        console.error("Fehler beim Laden der Trainingspläne:", err);
+      } finally {
+        setLoadingPlans(false);
+      }
     });
 
     return () => unsubscribe();
   }, []);
 
   const goToUserInterface = () => router.push("/userInterface");
-
-  const goToExcersice = () => router.push("/exercise");
+  const goToExercise = () => router.push("/exercise");
+  const goToStartWorkout = () => router.push("/startWorkout");
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden pb-10">
@@ -118,6 +116,27 @@ export default function WelcomePage() {
             Hier kannst du deine Trainingspläne anlegen, Workouts tracken und Statistiken deiner Übungen sehen.
           </p>
         </div>
+
+        {/* NEU: Workout starten Button - direkt nach der Begrüßung */}
+        {profile && trainingPlans.length > 0 && (
+          <div className="flex justify-center">
+            <div
+              onClick={goToStartWorkout}
+              className="bg-emerald-400 hover:bg-emerald-600 text-white px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer text-center max-w-md w-full"
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-2xl">🏋️</span>
+                <div>
+                  <div className="font-bold text-lg">Workout starten</div>
+                  <div className="text-sm opacity-90">
+                    Beginne dein Training mit einem deiner {trainingPlans.length} Pläne
+                  </div>
+                </div>
+                <span className="text-xl">→</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
           {/* Linke Seite: Diagramm */}
@@ -135,7 +154,7 @@ export default function WelcomePage() {
               <LoadingSpinner />
             </div>
           ) : profile ? (
-            <div className="w-full lg:w-80 max-w-full flex justify-center lg:justify-end">
+            <div className="w-full lg:w-100 max-w-full flex justify-center lg:justify-end">
               <div
                 className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer max-w-xs sm:max-w-full"
                 onClick={goToUserInterface}
@@ -151,7 +170,7 @@ export default function WelcomePage() {
           ) : null}
         </div>
         
-       {/* Trainingsplan & Übungen nebeneinander */}
+        {/* Trainingsplan & Übungen nebeneinander */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 text-gray-800">
           {/* Linke Spalte: Trainingspläne */}
           <div className="flex-3 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
@@ -173,7 +192,7 @@ export default function WelcomePage() {
 
           {/* Rechte Spalte: Übungen */}
           <div 
-            onClick={goToExcersice} 
+            onClick={goToExercise} 
             className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
             {loadingExercises ? (
@@ -184,7 +203,7 @@ export default function WelcomePage() {
               <MyExerciseList exercises={exercises} />
             )}
           </div>
-</div>
+        </div>
 
         {/* Login/Register Buttons für nicht eingeloggte Nutzer */}
         {!profile && !loadingProfile && (

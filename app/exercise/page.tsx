@@ -15,13 +15,16 @@ import Toast from "@/components/toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Exercise {
-  id: string;
-  name: string;
-  factor: number;
-  userId: string;
-  collection: "private" | "public";
-   factorInput?: string; 
-}
+    id: string;
+    name: string;
+    factor: number;
+    multiplier: number;
+    userId: string;
+    collection: "private" | "public";
+    factorInput?: string;
+    multiplierInput?: string;
+  }
+  
 
 export default function ExercisesPage() {
   const [view, setView] = useState<"private" | "public">("private");
@@ -35,6 +38,9 @@ export default function ExercisesPage() {
     null
   );
   const [user, setUser] = useState<any>(null);
+  const [multiplier, setMultiplier] = useState(1);
+  const [multiplierInput, setMultiplierInput] = useState("1");
+
 
   const [factorInput, setFactorInput] = useState("1"); // für das Input-Feld
 
@@ -65,11 +71,15 @@ export default function ExercisesPage() {
       }
 
       setExercises(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...(d.data() as any),
-          collection: view,
-        }))
+        snap.docs.map((d) => {
+          const data = d.data() as any;
+          return {
+            id: d.id,
+            ...data,
+            multiplier: data.multiplier ?? 1, // Default-Wert
+            collection: view,
+          };
+        })
       );
     } catch (err) {
       console.error("Fehler beim Laden der Übungen:", err);
@@ -124,6 +134,7 @@ export default function ExercisesPage() {
             await updateDoc(doc(db, "users", user!.uid, "exercises", ex.id), {
               name: ex.name,
               factor: ex.factor,
+              multiplier: ex.multiplier
             });
           })
       );
@@ -176,6 +187,7 @@ export default function ExercisesPage() {
     await addDoc(collection(db, "users", user.uid, "exercises"), {
       name: ex.name,
       factor: ex.factor,
+      multiplier: ex.multiplier,
       userId: user.uid,
       createdAt: Date.now(),
     });
@@ -202,6 +214,7 @@ export default function ExercisesPage() {
     await addDoc(collection(db, "globalExercises"), {
       name: ex.name,
       factor: ex.factor,
+      multiplier: ex.multiplier,
       createdBy: user.uid,
       createdAt: Date.now(),
     });
@@ -291,35 +304,73 @@ export default function ExercisesPage() {
     )}
   </div>
 </div>
-          {showForm && (
-            <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
-              <input
-                className="w-full border border-gray-300 rounded-lg p-2 mb-3"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg p-2 mb-3"
-                placeholder="Faktor"
-                value={factorInput}
-                onChange={(e) => {
-                  // Nur Zahlen und ein optionaler Punkt erlaubt
-                  if (/^\d*\.?\d*$/.test(e.target.value)) {
-                    setFactorInput(e.target.value);
-                    setFactor(e.target.value === "" ? 0 : parseFloat(e.target.value));
-                  }
-                }}
-              />
-              <button
-                onClick={addExercise}
-                className="w-full bg-emerald-400 hover:bg-emerald-600 text-white py-2 rounded-lg"
-              >
-                Speichern
-              </button>
-            </div>
-          )}
+{showForm && (
+  <div className="bg-white shadow-md rounded-xl p-6 mb-6 border border-gray-200">
+    <h2 className="text-lg font-semibold mb-4 text-gray-700">
+      Übung {editMode ? "bearbeiten" : "hinzufügen"}
+    </h2>
+
+    {/* Name */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-600 mb-1">
+        Name der Übung
+      </label>
+      <input
+        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+        placeholder="z.B. Bankdrücken"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+    </div>
+
+    {/* Faktor */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-600 mb-1">
+        Faktor
+      </label>
+      <input
+        type="text"
+        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+        placeholder="Faktor eingeben"
+        value={factorInput}
+        onChange={(e) => {
+          if (/^\d*\.?\d*$/.test(e.target.value)) {
+            setFactorInput(e.target.value);
+            setFactor(e.target.value === "" ? 0 : parseFloat(e.target.value));
+          }
+        }}
+      />
+    </div>
+
+    {/* Multiplier */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-600 mb-1">
+        Multiplikator (Multiplier)
+      </label>
+      <input
+        type="text"
+        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+        placeholder="Multiplier eingeben"
+        value={multiplierInput}
+        onChange={(e) => {
+          if (/^\d*\.?\d*$/.test(e.target.value)) {
+            setMultiplierInput(e.target.value);
+            setMultiplier(
+              e.target.value === "" ? 0 : parseFloat(e.target.value)
+            );
+          }
+        }}
+      />
+    </div>
+
+    <button
+      onClick={addExercise}
+      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg transition"
+    >
+      Speichern
+    </button>
+  </div>
+)}
 
           {/* Exercises Grid mit Slide/Fade Animation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -343,44 +394,80 @@ export default function ExercisesPage() {
                     </button>
                   )}
 
-                 {view === "private" && editMode ? (
-                    <>
-                      {/* Name Input */}
-                      <input
-                        className="border border-gray-300 rounded-lg p-2 mb-2 w-full"
-                        value={ex.name}
-                        onChange={(e) => {
-                          const updated = [...exercises];
-                          const idx = updated.findIndex((i) => i.id === ex.id);
-                          updated[idx].name = e.target.value;
-                          setExercises(updated);
-                        }}
-                      />
+                    {view === "private" && editMode ? (
+                    <div className="flex flex-col gap-3 mt-3">
 
-                      {/* Faktor Input (Decimal-safe) */}
-                     <input
-                        type="text"
-                        className="border border-gray-300 rounded-lg p-2 w-full"
-                        value={ex.factorInput ?? ex.factor.toString()}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          // nur Ziffern und maximal ein Punkt erlauben
-                          if (/^\d*\.?\d*$/.test(val)) {
+                        {/* NAME */}
+                        <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Name</label>
+                        <input
+                            className="border border-gray-300 rounded-lg p-2 w-full"
+                            value={ex.name}
+                            onChange={(e) => {
                             const updated = [...exercises];
                             const idx = updated.findIndex((i) => i.id === ex.id);
-                            updated[idx].factorInput = val; // temporäre Eingabe als string speichern
-                            updated[idx].factor = val === "" || val === "." ? 0 : parseFloat(val);
+                            updated[idx].name = e.target.value;
                             setExercises(updated);
-                          }
-                        }}
-                      />
-                    </>
-                  ) : (
+                            }}
+                        />
+                        </div>
+
+                        {/* FAKTOR */}
+                        <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Faktor</label>
+                        <input
+                            type="text"
+                            className="border border-gray-300 rounded-lg p-2 w-full"
+                            value={ex.factorInput ?? ex.factor?.toString() ?? ""}
+                            onChange={(e) => {
+                            const val = e.target.value;
+
+                            if (/^\d*\.?\d*$/.test(val)) {
+                                const updated = [...exercises];
+                                const idx = updated.findIndex((i) => i.id === ex.id);
+
+                                updated[idx].factorInput = val;
+                                updated[idx].factor =
+                                val === "" || val === "." ? 0 : parseFloat(val);
+
+                                setExercises(updated);
+                            }
+                            }}
+                        />
+                        </div>
+
+                        {/* MULTIPLIER */}
+                        <div className="flex flex-col">
+                        <label className="text-sm text-gray-600 mb-1">Multiplier</label>
+                        <input
+                            type="text"
+                            className="border border-gray-300 rounded-lg p-2 w-full"
+                            value={ex.multiplierInput ?? ex.multiplier?.toString() ?? ""}
+                            onChange={(e) => {
+                            const val = e.target.value;
+
+                            if (/^\d*\.?\d*$/.test(val)) {
+                                const updated = [...exercises];
+                                const idx = updated.findIndex((i) => i.id === ex.id);
+
+                                updated[idx].multiplierInput = val;
+                                updated[idx].multiplier =
+                                val === "" || val === "." ? 0 : parseFloat(val);
+
+                                setExercises(updated);
+                            }
+                            }}
+                        />
+                        </div>
+
+                    </div>
+                    ) : (
                     <>
                       <h3 className="text-xl font-semibold text-gray-900 mb-1">
                         {ex.name}
                       </h3>
                       <p className="text-gray-700">Faktor: {ex.factor}</p>
+                      <p className="text-gray-700">Multiplier: {ex.multiplier}</p>
 
                       {ex.collection === "public" && (
                         <button

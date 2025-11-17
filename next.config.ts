@@ -1,12 +1,14 @@
-const isProd = process.env.NODE_ENV === "production";
-
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
-  basePath: isProd ? "/GymTracker" : "",
-  assetPrefix: isProd ? "/GymTracker/" : "",
+  output: 'export',
+  trailingSlash: true,
   images: {
-    unoptimized: true,
+    unoptimized: true
   },
-};
+  // Wichtig für dynamische Routes mit static export
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  }
+}
 
-export default nextConfig;
+module.exports = nextConfig
