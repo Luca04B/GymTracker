@@ -15,6 +15,7 @@ interface ExerciseData {
   repsMin: number;
   repsMax: number;
   setsData: SetData[];
+  lastWorkoutData?: any; // Neue Property für letzte Workout-Daten
 }
 
 interface ActiveExerciseProps {
@@ -33,10 +34,9 @@ export default function ActiveExercise({
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [setsData, setSetsData] = useState<SetData[]>(exercise.setsData);
 
-  // WICHTIG: Aktualisiere local state wenn exercise sich ändert
   useEffect(() => {
     setSetsData(exercise.setsData);
-    setCurrentSetIndex(0); // Setze zurück auf ersten Satz bei Übungswechsel
+    setCurrentSetIndex(0);
   }, [exercise]);
 
   const handleSetUpdate = (setIndex: number, field: 'reps' | 'weight', value: number) => {
@@ -56,23 +56,17 @@ export default function ActiveExercise({
     };
     setSetsData(updatedSets);
 
-    // Prüfe ob alle Sätze dieser Übung completed sind
     const allSetsCompleted = updatedSets.every(set => set.completed);
 
     if (allSetsCompleted) {
-      console.log(`Alle Sätze von Übung ${exerciseIndex} completed`);
       onComplete(exerciseIndex, updatedSets);
     } else if (setIndex < exercise.sets - 1) {
-      // Nächster Satz
       setCurrentSetIndex(setIndex + 1);
     } else {
-      // Letzter Satz completed, aber nicht alle Sätze sind completed
-      // Finde den ersten nicht-completed Satz
       const nextIncompleteSet = updatedSets.findIndex(set => !set.completed);
       if (nextIncompleteSet !== -1) {
         setCurrentSetIndex(nextIncompleteSet);
       } else {
-        // Sollte nicht passieren, aber falls doch
         onComplete(exerciseIndex, updatedSets);
       }
     }
@@ -92,8 +86,27 @@ export default function ActiveExercise({
     handleSetUpdate(currentSetIndex, 'weight', Math.max(0, setsData[currentSetIndex].weight + amount));
   };
 
-  // Prüfe ob alle Sätze completed sind
+  // Funktion um letzte Workout-Daten zu übernehmen
+  const useLastWorkoutData = () => {
+    if (!exercise.lastWorkoutData) return;
+    
+    const updatedSets = setsData.map((set, index) => {
+      const lastSet = exercise.lastWorkoutData?.setsData?.[index];
+      if (lastSet) {
+        return {
+          ...set,
+          reps: lastSet.reps,
+          weight: lastSet.weight
+        };
+      }
+      return set;
+    });
+    
+    setSetsData(updatedSets);
+  };
+
   const allSetsCompleted = setsData.every(set => set.completed);
+  const hasLastWorkoutData = exercise.lastWorkoutData;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mx-auto w-full max-w-md">
@@ -116,6 +129,33 @@ export default function ActiveExercise({
         </div>
       </div>
 
+      {/* Letztes Workout Info */}
+      {hasLastWorkoutData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-800 mb-1">
+                Letztes Workout 📅
+              </h4>
+              <div className="text-xs text-blue-600 space-y-1">
+                {exercise.lastWorkoutData.setsData.map((set: any, index: number) => (
+                  <div key={index} className="flex justify-between">
+                    <span>Satz {index + 1}:</span>
+                    <span className="font-medium">{set.reps} × {set.weight}kg</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={useLastWorkoutData}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium ml-2 touch-target active:scale-95 whitespace-nowrap"
+            >
+              Übernehmen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Aktueller Satz */}
       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
         <h3 className="text-lg font-semibold text-emerald-800 mb-4 text-center">
@@ -136,7 +176,7 @@ export default function ActiveExercise({
               −
             </button>
             
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <input
                 type="number"
                 value={setsData[currentSetIndex].reps}
@@ -144,6 +184,12 @@ export default function ActiveExercise({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 min="1"
               />
+              {/* Letzter Wert als kleine Info */}
+              {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
+                <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">
+                  Letztes: {exercise.lastWorkoutData.setsData[currentSetIndex].reps}
+                </div>
+              )}
             </div>
             
             <button
@@ -153,7 +199,7 @@ export default function ActiveExercise({
               +
             </button>
           </div>
-          <div className="text-xs text-gray-500 text-center">
+          <div className="text-xs text-gray-500 text-center mt-6">
             Ziel: {exercise.repsMin}-{exercise.repsMax} Wiederholungen
           </div>
         </div>
@@ -171,7 +217,7 @@ export default function ActiveExercise({
               -2.5
             </button>
             
-            <div className="flex-1">
+            <div className="flex-1 relative">
               <input
                 type="number"
                 value={setsData[currentSetIndex].weight}
@@ -180,6 +226,12 @@ export default function ActiveExercise({
                 step="0.5"
                 min="0"
               />
+              {/* Letzter Wert als kleine Info */}
+              {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
+                <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">
+                  Letztes: {exercise.lastWorkoutData.setsData[currentSetIndex].weight}kg
+                </div>
+              )}
             </div>
             
             <button

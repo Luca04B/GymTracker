@@ -1,7 +1,18 @@
 "use client";
 
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  doc, 
+  getDoc, 
+  collection, 
+  addDoc, 
+  serverTimestamp,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs 
+} from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Header from "@/components/header";
@@ -36,6 +47,7 @@ interface ExerciseData {
   repsMin: number;
   repsMax: number;
   setsData: SetData[];
+  lastWorkoutData?: any; // NEU: Für letzte Workout-Daten
 }
 
 export default function ActiveWorkoutPage() {
@@ -46,6 +58,7 @@ export default function ActiveWorkoutPage() {
   const [workoutData, setWorkoutData] = useState<ExerciseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
+  const [lastWorkout, setLastWorkout] = useState<any>(null); // NEU: State für letzten Workout
 
   useEffect(() => {
     // URL Parameter ohne useSearchParams() auslesen
@@ -60,15 +73,45 @@ export default function ActiveWorkoutPage() {
     }
   }, []);
 
+  // NEU: Funktion um letzten Workout zu laden
+  const fetchLastWorkoutData = async (planId: string) => {
+    const user = auth.currentUser;
+    if (!user) return null;
+
+    try {
+      const workoutsQuery = query(
+        collection(db, "users", user.uid, "workoutSessions"),
+        where("planId", "==", planId),
+        orderBy("endTime", "desc"),
+        limit(1)
+      );
+      
+      const querySnapshot = await getDocs(workoutsQuery);
+      if (!querySnapshot.empty) {
+        const lastWorkout = querySnapshot.docs[0].data();
+        return lastWorkout;
+      }
+      return null;
+    } catch (err) {
+      console.error("Fehler beim Laden des letzten Workouts:", err);
+      return null;
+    }
+  };
+
+  // AKTUALISIERT: fetchTrainingPlan mit letzten Workout-Daten
   const fetchTrainingPlan = async (planId: string) => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/login");
       return;
     }
 
     try {
-      const planDoc = await getDoc(doc(db, "users", user.uid, "trainingPlans", planId));
+      // Lade Plan und letzten Workout parallel
+      const [planDoc, lastWorkout] = await Promise.all([
+        getDoc(doc(db, "users", user.uid, "trainingPlans", planId)),
+        fetchLastWorkoutData(planId)
+      ]);
+
       if (planDoc.exists()) {
         const planData = {
           id: planDoc.id,
@@ -76,19 +119,29 @@ export default function ActiveWorkoutPage() {
         } as TrainingPlan;
         
         setPlan(planData);
+        setLastWorkout(lastWorkout); // NEU: Setze letzten Workout
         
-        const initialWorkoutData: ExerciseData[] = planData.items.map(item => ({
-          exerciseId: item.exerciseId,
-          name: item.name,
-          sets: item.sets,
-          repsMin: item.repsMin,
-          repsMax: item.repsMax,
-          setsData: Array.from({ length: item.sets }, (_, i) => ({
-            reps: Math.floor((item.repsMin + item.repsMax) / 2),
-            weight: 0,
-            completed: false
-          }))
-        }));
+        // AKTUALISIERT: Initialisiere Workout-Daten mit letzten Werten falls verfügbar
+        const initialWorkoutData: ExerciseData[] = planData.items.map((item, index) => {
+          const lastExercise = lastWorkout?.exercises?.[index];
+          
+          return {
+            exerciseId: item.exerciseId,
+            name: item.name,
+            sets: item.sets,
+            repsMin: item.repsMin,
+            repsMax: item.repsMax,
+            setsData: Array.from({ length: item.sets }, (_, setIndex) => {
+              const lastSet = lastExercise?.setsData?.[setIndex];
+              return {
+                reps: lastSet?.reps || Math.floor((item.repsMin + item.repsMax) / 2),
+                weight: lastSet?.weight || 0,
+                completed: false
+              };
+            }),
+            lastWorkoutData: lastExercise // NEU: Speichere die letzten Daten für die Anzeige
+          };
+        });
         
         setWorkoutData(initialWorkoutData);
       } else {
@@ -102,7 +155,6 @@ export default function ActiveWorkoutPage() {
     }
   };
 
-  // ... restliche Funktionen bleiben gleich
   const handleExerciseComplete = (exerciseIndex: number, updatedSets: SetData[]) => {
     const updatedWorkoutData = workoutData.map((exercise, index) => 
       index === exerciseIndex 
