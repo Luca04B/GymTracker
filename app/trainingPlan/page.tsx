@@ -20,7 +20,6 @@ interface PlanItem {
   sets: number;
   repsMin: number;
   repsMax: number;
-  weight: number;
 }
 
 interface TrainingPlan {
@@ -38,7 +37,6 @@ export default function TrainingPlanPage() {
   const [sets, setSets] = useState<number>(3);
   const [repsMin, setRepsMin] = useState<number>(6);
   const [repsMax, setRepsMax] = useState<number>(8);
-  const [weight, setWeight] = useState<number>(0);
   const [planName, setPlanName] = useState<string>("");
   const [weightInput, setWeightInput] = useState<string>("0");
 
@@ -100,7 +98,6 @@ export default function TrainingPlanPage() {
       sets,
       repsMin,
       repsMax,
-      weight,
     };
 
     if (editingIndex !== null) {
@@ -120,7 +117,6 @@ export default function TrainingPlanPage() {
     setSets(3);
     setRepsMin(6);
     setRepsMax(8);
-    setWeight(0);
     setWeightInput("0");
     setEditingIndex(null);
   };
@@ -132,8 +128,6 @@ export default function TrainingPlanPage() {
     setSets(item.sets);
     setRepsMin(item.repsMin);
     setRepsMax(item.repsMax);
-    setWeight(item.weight);
-    setWeightInput(item.weight.toString());
   };
 
   const removeExercise = (index: number) => {
@@ -293,21 +287,6 @@ const deleteTrainingPlan = async (planId: string) => {
             onChange={(e) => setSets(Number(e.target.value))}
           />
 
-          {/* Gewicht */}
-          <label className="block mb-2 font-semibold text-gray-800">Vorschlags Gewicht</label>
-          <input
-            type="text"
-            className="w-full p-3 border rounded-lg mb-4 bg-gray-50 border-gray-400"
-            value={weightInput}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (/^\d*\.?\d*$/.test(val)) {
-                setWeightInput(val);
-                setWeight(val === "" ? 0 : parseFloat(val));
-              }
-            }}
-          />
-
           {/* Wiederholungen */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -335,7 +314,7 @@ const deleteTrainingPlan = async (planId: string) => {
             onClick={addExerciseToPlan}
             className="w-full mt-2 bg-sky-500 hover:bg-sky-700 text-white py-3 rounded-lg font-bold shadow-md"
           >
-            {editingIndex !== null ? "✅ Änderungen übernehmen" : "➕ Übung hinzufügen"}
+            {editingIndex !== null ? " Änderungen übernehmen" : " Übung hinzufügen"}
           </button>
 
           {/* Aktueller Plan */}
@@ -353,7 +332,7 @@ const deleteTrainingPlan = async (planId: string) => {
                       <div>
                         <div className="font-bold text-lg">{item.name}</div>
                         <div className="text-sm text-gray-700">
-                          {item.sets} Sätze – {item.repsMin}-{item.repsMax} Wdh. a {item.weight} kg
+                          {item.sets} Sätze – {item.repsMin}-{item.repsMax} Wdh.
                         </div>
                       </div>
                       <button
@@ -378,7 +357,7 @@ const deleteTrainingPlan = async (planId: string) => {
             className="w-full mt-8 bg-emerald-400 hover:bg-emerald-600 text-white py-3 rounded-lg font-bold shadow-md disabled:bg-gray-400"
             disabled={currentPlan.length === 0}
             >
-            💾 Trainingsplan speichern
+             Trainingsplan speichern
             </button>
 
 

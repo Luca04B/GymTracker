@@ -26,7 +26,6 @@ html, body {
   /* Fix für iPhone Notch + Home Indicator */
   padding-bottom: env(safe-area-inset-bottom);
 
-  /* Entfernt den schwarzen Rand endgültig */
   min-height: 100vh;
   min-height: 100dvh; /* iOS 16+ */
   height: 100%;
@@ -37,7 +36,6 @@ html, body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Scrollbar unsichtbar, aber scrollbar bleibt aktiv */
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE 10+ */
   scrollbar-width: none; /* Firefox */

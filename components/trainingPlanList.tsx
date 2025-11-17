@@ -9,7 +9,6 @@ interface PlanItem {
   sets: number;
   repsMin: number;
   repsMax: number;
-  weight: number;
 }
 
 interface TrainingPlan {
