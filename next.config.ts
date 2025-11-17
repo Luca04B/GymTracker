@@ -5,7 +5,7 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  // Wichtig für dynamische Routes mit static export
+  // Wichtig für static export mit dynamischen Features
   experimental: {
     missingSuspenseWithCSRBailout: false,
   }

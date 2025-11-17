@@ -2,7 +2,7 @@
 
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Header from "@/components/header";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -15,20 +15,20 @@ interface TrainingPlan {
 
 export default function WorkoutStartPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const planId = searchParams.get('planId');
-  
   const [plans, setPlans] = useState<TrainingPlan[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // URL Parameter auslesen
+    const urlParams = new URLSearchParams(window.location.search);
+    const planId = urlParams.get('planId');
+    
     if (planId) {
-      // Direkt zur Workout-Seite navigieren, wenn planId in URL Param
       router.push(`/workout/active?planId=${planId}`);
     } else {
       fetchTrainingPlans();
     }
-  }, [planId]);
+  }, []);
 
   const fetchTrainingPlans = async () => {
     const user = auth.currentUser;

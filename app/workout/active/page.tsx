@@ -2,7 +2,7 @@
 
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Header from "@/components/header";
 import LoadingSpinner from "@/components/loadingSpinner";
@@ -40,9 +40,7 @@ interface ExerciseData {
 
 export default function ActiveWorkoutPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const planId = searchParams.get('planId');
-  
+  const [planId, setPlanId] = useState<string | null>(null);
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [workoutData, setWorkoutData] = useState<ExerciseData[]>([]);
@@ -50,14 +48,19 @@ export default function ActiveWorkoutPage() {
   const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
-    if (planId) {
-      fetchTrainingPlan();
+    // URL Parameter ohne useSearchParams() auslesen
+    const urlParams = new URLSearchParams(window.location.search);
+    const planIdFromUrl = urlParams.get('planId');
+    
+    if (planIdFromUrl) {
+      setPlanId(planIdFromUrl);
+      fetchTrainingPlan(planIdFromUrl);
     } else {
       router.push("/workout/start");
     }
-  }, [planId]);
+  }, []);
 
-  const fetchTrainingPlan = async () => {
+  const fetchTrainingPlan = async (planId: string) => {
     const user = auth.currentUser;
     if (!user) {
       router.push("/login");
@@ -65,7 +68,7 @@ export default function ActiveWorkoutPage() {
     }
 
     try {
-      const planDoc = await getDoc(doc(db, "users", user.uid, "trainingPlans", planId!));
+      const planDoc = await getDoc(doc(db, "users", user.uid, "trainingPlans", planId));
       if (planDoc.exists()) {
         const planData = {
           id: planDoc.id,
@@ -74,7 +77,6 @@ export default function ActiveWorkoutPage() {
         
         setPlan(planData);
         
-        // Initialisiere Workout-Daten mit korrekten Standardwerten
         const initialWorkoutData: ExerciseData[] = planData.items.map(item => ({
           exerciseId: item.exerciseId,
           name: item.name,
@@ -100,11 +102,8 @@ export default function ActiveWorkoutPage() {
     }
   };
 
-  // KORRIGIERT: Richtige State-Aktualisierung
+  // ... restliche Funktionen bleiben gleich
   const handleExerciseComplete = (exerciseIndex: number, updatedSets: SetData[]) => {
-    console.log("Exercise complete:", exerciseIndex, updatedSets);
-    
-    // Aktualisiere die Sets für die aktuelle Übung
     const updatedWorkoutData = workoutData.map((exercise, index) => 
       index === exerciseIndex 
         ? { ...exercise, setsData: updatedSets }
@@ -113,19 +112,15 @@ export default function ActiveWorkoutPage() {
     
     setWorkoutData(updatedWorkoutData);
 
-    // Prüfe ob alle Übungen completed sind
     const allExercisesCompleted = updatedWorkoutData.every(exercise =>
       exercise.setsData.every(set => set.completed)
     );
 
     if (allExercisesCompleted) {
-      console.log("Alle Übungen completed - zeige Summary");
       setShowSummary(true);
     } else if (exerciseIndex < workoutData.length - 1) {
-      console.log("Nächste Übung:", exerciseIndex + 1);
       setCurrentExerciseIndex(exerciseIndex + 1);
     } else {
-      console.log("Letzte Übung completed - zeige Summary");
       setShowSummary(true);
     }
   };
@@ -141,7 +136,8 @@ export default function ActiveWorkoutPage() {
         exercises: workoutData,
         startTime: serverTimestamp(),
         endTime: serverTimestamp(),
-        completed: true
+        completed: true,
+        userId: user.uid
       });
 
       router.push("/welcome");
@@ -240,7 +236,6 @@ export default function ActiveWorkoutPage() {
           )}
         </div>
 
-        {/* Mobile Bottom Spacing */}
         <div className="h-6"></div>
       </main>
     </div>
