@@ -157,15 +157,16 @@ export default function WelcomePage() {
           <div className="flex-3 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
             {loadingPlans ? (
               <div className="flex justify-center"><LoadingSpinner /></div>
-            ) : trainingPlans.length === 0 ? (
-              <p className="text-gray-500 text-center">Noch keine Trainingspläne vorhanden.</p>
             ) : (
               <TrainingPlanList
                 plans={trainingPlans}
                 loading={loadingPlans}
+                onEmptyClick={() => router.push(`/trainingPlan`)}
                 onSelectPlan={(plan) => {
                   router.push(`/trainingPlan`);
                 }}
+                onDeletePlan={undefined}
+                showDelete={false}
               />
             )}
           </div>

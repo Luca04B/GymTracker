@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/header";
 import { db, auth } from "@/lib/firebase";
-import { collection, getDocs, addDoc, setDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, setDoc, doc, deleteDoc } from "firebase/firestore";
 import LoadingSpinner from "@/components/loadingSpinner";
 import TrainingPlanList from "@/components/trainingPlanList";
 import Toast from "@/components/toast";
@@ -202,6 +202,30 @@ const showToastMessage = (message: string, type: "success" | "error" | "info" = 
   setShowToast(true);
 };
 
+const deleteTrainingPlan = async (planId: string) => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    await deleteDoc(doc(db, "users", user.uid, "trainingPlans", planId));
+
+    // Lokale Liste updaten
+    setAllPlans((prev) => prev.filter((p) => p.id !== planId));
+
+    // Wenn der gelöschte Plan gerade geöffnet war → clear
+    if (currentPlanId === planId) {
+      setCurrentPlan([]);
+      setCurrentPlanName("");
+      setCurrentPlanId(null);
+    }
+
+    showToastMessage("Trainingsplan gelöscht!", "success");
+  } catch (err) {
+    console.error(err);
+    showToastMessage("Fehler beim Löschen.", "error");
+  }
+};
+
 
   if (loading) return <LoadingSpinner message="Lade Übungen..." />;
 
@@ -377,6 +401,8 @@ const showToastMessage = (message: string, type: "success" | "error" | "info" = 
                 resetInputs();
             }
             }}
+             onDeletePlan={deleteTrainingPlan}  
+             showDelete={true}
             />
         </div>)}
       </main>
