@@ -41,7 +41,7 @@ export default function WelcomePage() {
   const goToUserInterface = () => router.push("/userInterface");
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <Header />
 
       <main className="mt-20 px-4 sm:px-6 lg:px-12">
@@ -53,11 +53,21 @@ export default function WelcomePage() {
         </div>
 
         <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
-          {/* Identity Card */}
+          {/* Linke Seite: Diagramm */}
+          <div className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 max-w-full">
+            {measurements.length > 0 ? (
+              <WeightChart measurements={measurements} />
+            ) : (
+              <p className="text-gray-500 text-center">Noch keine Messungen vorhanden.</p>
+            )}
+          </div>
+
+          {/* Rechte Seite: Identity Card */}
           {profile && (
-            <div className="w-full lg:w-110">
+            <div className="w-full lg:w-80 max-w-full flex justify-center lg:justify-end">
               <div
-                className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer
+                           max-w-xs sm:max-w-full"
                 onClick={goToUserInterface}
               >
                 <UserProfileCard
@@ -69,15 +79,6 @@ export default function WelcomePage() {
               </div>
             </div>
           )}
-
-          {/* Diagramm */}
-          <div className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
-            {measurements.length > 0 ? (
-              <WeightChart measurements={measurements} />
-            ) : (
-              <p className="text-gray-500 text-center">Noch keine Messungen vorhanden.</p>
-            )}
-          </div>
         </div>
 
         {/* Login/Register Buttons für nicht eingeloggte Nutzer */}

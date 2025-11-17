@@ -29,7 +29,18 @@ export default function Header() {
         </h1>
       </div>
 
-      <nav className="flex items-center gap-4">
+      <nav className="flex items-center gap-6">
+
+      <Link href='/exercise'>
+      <Image
+        src={getAssetPath("/exercise.png")}
+        alt="User"
+        width={40}
+        height={40}
+        unoptimized
+      />
+    </Link>
+
       <Link href='/checkUserPage'>
       <Image
         src={getAssetPath("/user.png")}
