@@ -5,10 +5,6 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  // Wichtig für static export mit dynamischen Features
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  }
 }
 
 module.exports = nextConfig

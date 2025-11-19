@@ -4,6 +4,7 @@ interface SetData {
   reps: number;
   weight: number;
   completed: boolean;
+  score?: number;
 }
 
 interface ExerciseData {
@@ -13,6 +14,10 @@ interface ExerciseData {
   repsMin: number;
   repsMax: number;
   setsData: SetData[];
+  factor: number;
+  multiplier: number;
+  scores: number[];
+  totalScore: number;
 }
 
 interface WorkoutSummaryProps {
@@ -32,6 +37,7 @@ export default function WorkoutSummary({
   const completedSets = workoutData.reduce((total, exercise) => 
     total + exercise.setsData.filter(set => set.completed).length, 0
   );
+  const totalWorkoutScore = workoutData.reduce((total, exercise) => total + exercise.totalScore, 0);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -40,7 +46,7 @@ export default function WorkoutSummary({
         <p className="text-gray-600">Gut gemacht! Hier ist deine Zusammenfassung:</p>
       </div>
 
-      {/* Statistiken */}
+      {/* Score Statistiken */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-blue-600">{workoutData.length}</div>
@@ -60,34 +66,42 @@ export default function WorkoutSummary({
         </div>
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-orange-600">
-            {workoutData.reduce((total, exercise) => 
-              total + exercise.setsData.reduce((sum, set) => sum + set.weight, 0), 0
-            ).toFixed(1)}kg
+            {totalWorkoutScore.toFixed(1)}
           </div>
-          <div className="text-orange-700 text-sm">Gesamtgewicht</div>
+          <div className="text-orange-700 text-sm">Gesamt Score</div>
         </div>
       </div>
 
-      {/* Übungsdetails */}
-      <div className="space-y-4 mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Übungsdetails</h3>
+      {/* Übungsdetails mit Scores */}
+      <div className="space-y-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Übungsdetails & Scores</h3>
         {workoutData.map((exercise, exerciseIndex) => (
           <div key={exerciseIndex} className="border border-gray-200 rounded-lg p-4">
             <div className="flex justify-between items-start mb-3">
-              <h4 className="font-semibold text-gray-800 text-lg">{exercise.name}</h4>
-              <button
-                onClick={() => onEditExercise(exerciseIndex)}
-                className="bg-sky-600 hover:bg-sky-800 text-white px-3 py-1 rounded text-sm transition-colors"
-              >
-                Bearbeiten
-              </button>
+              <div>
+                <h4 className="font-semibold text-gray-800 text-lg">{exercise.name}</h4>
+                <div className="text-sm text-gray-600">
+                  Factor: {exercise.factor} | Multiplier: {exercise.multiplier}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                  Score: {exercise.totalScore.toFixed(1)}
+                </div>
+                <button
+                  onClick={() => onEditExercise(exerciseIndex)}
+                  className="bg-sky-600 hover:bg-sky-800 text-white px-3 py-1 rounded text-sm transition-colors"
+                >
+                  Bearbeiten
+                </button>
+              </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {exercise.setsData.map((set, setIndex) => (
                 <div
                   key={setIndex}
-                  className={`p-2 rounded text-center ${
+                  className={`p-3 rounded text-center ${
                     set.completed ? 'bg-green-100 border border-green-300' : 'bg-gray-100'
                   }`}
                 >
@@ -99,6 +113,11 @@ export default function WorkoutSummary({
                   ) : (
                     <div className="text-sm text-gray-500">Nicht completed</div>
                   )}
+                  <div className={`text-sm font-medium mt-1 ${
+                    set.score && set.score > 0 ? 'text-purple-600' : 'text-gray-400'
+                  }`}>
+                    Score: {set.score?.toFixed(1) || 0}
+                  </div>
                 </div>
               ))}
             </div>

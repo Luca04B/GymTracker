@@ -38,6 +38,7 @@ interface SetData {
   reps: number;
   weight: number;
   completed: boolean;
+  score?: number;
 }
 
 interface ExerciseData {
@@ -47,8 +48,18 @@ interface ExerciseData {
   repsMin: number;
   repsMax: number;
   setsData: SetData[];
-  lastWorkoutData?: any; // NEU: Für letzte Workout-Daten
+  lastWorkoutData?: any;
+  factor: number;
+  multiplier: number;
+  scores: number[];
+  totalScore: number;
 }
+
+// Score Berechnungsfunktion
+const calculateScore = (weight: number, reps: number, factor: number, multiplier: number): number => {
+  const score = (weight * Math.exp(factor * reps)) * 100 / multiplier;
+  return Math.round(score * 100) / 100;
+};
 
 export default function ActiveWorkoutPage() {
   const router = useRouter();
@@ -58,10 +69,9 @@ export default function ActiveWorkoutPage() {
   const [workoutData, setWorkoutData] = useState<ExerciseData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSummary, setShowSummary] = useState(false);
-  const [lastWorkout, setLastWorkout] = useState<any>(null); // NEU: State für letzten Workout
+  const [lastWorkout, setLastWorkout] = useState<any>(null);
 
   useEffect(() => {
-    // URL Parameter ohne useSearchParams() auslesen
     const urlParams = new URLSearchParams(window.location.search);
     const planIdFromUrl = urlParams.get('planId');
     
@@ -73,7 +83,6 @@ export default function ActiveWorkoutPage() {
     }
   }, []);
 
-  // NEU: Funktion um letzten Workout zu laden
   const fetchLastWorkoutData = async (planId: string) => {
     const user = auth.currentUser;
     if (!user) return null;
@@ -98,15 +107,14 @@ export default function ActiveWorkoutPage() {
     }
   };
 
-  // AKTUALISIERT: fetchTrainingPlan mit letzten Workout-Daten
   const fetchTrainingPlan = async (planId: string) => {
     const user = auth.currentUser;
     if (!user) {
+      router.push("/login");
       return;
     }
 
     try {
-      // Lade Plan und letzten Workout parallel
       const [planDoc, lastWorkout] = await Promise.all([
         getDoc(doc(db, "users", user.uid, "trainingPlans", planId)),
         fetchLastWorkoutData(planId)
@@ -119,31 +127,68 @@ export default function ActiveWorkoutPage() {
         } as TrainingPlan;
         
         setPlan(planData);
-        setLastWorkout(lastWorkout); // NEU: Setze letzten Workout
+        setLastWorkout(lastWorkout);
         
-        // AKTUALISIERT: Initialisiere Workout-Daten mit letzten Werten falls verfügbar
-        const initialWorkoutData: ExerciseData[] = planData.items.map((item, index) => {
-          const lastExercise = lastWorkout?.exercises?.[index];
-          
-          return {
-            exerciseId: item.exerciseId,
-            name: item.name,
-            sets: item.sets,
-            repsMin: item.repsMin,
-            repsMax: item.repsMax,
-            setsData: Array.from({ length: item.sets }, (_, setIndex) => {
-              const lastSet = lastExercise?.setsData?.[setIndex];
+        const exercisesWithDetails = await Promise.all(
+          planData.items.map(async (item) => {
+            try {
+              const exerciseDoc = await getDoc(doc(db, "users", user.uid, "exercises", item.exerciseId));
+              const exerciseData = exerciseDoc.exists() ? exerciseDoc.data() : {};
+              
+              const lastExercise = lastWorkout?.exercises?.find((e: any) => e.exerciseId === item.exerciseId);
+              
               return {
-                reps: lastSet?.reps || Math.floor((item.repsMin + item.repsMax) / 2),
-                weight: lastSet?.weight || 0,
-                completed: false
+                exerciseId: item.exerciseId,
+                name: item.name || 'Unbekannte Übung',
+                sets: item.sets || 0,
+                repsMin: item.repsMin || 0,
+                repsMax: item.repsMax || 0,
+                factor: Number(exerciseData.factor) || 0.1,
+                multiplier: Number(exerciseData.multiplier) || 100,
+                setsData: Array.from({ length: item.sets }, (_, setIndex) => {
+                  const lastSet = lastExercise?.setsData?.[setIndex];
+                  const initialReps = lastSet?.reps || Math.floor(((item.repsMin || 0) + (item.repsMax || 0)) / 2);
+                  const initialWeight = lastSet?.weight || 0;
+                  
+                  return {
+                    reps: initialReps,
+                    weight: initialWeight,
+                    completed: false,
+                    score: calculateScore(initialWeight, initialReps, Number(exerciseData.factor) || 0.1, Number(exerciseData.multiplier) || 100)
+                  };
+                }),
+                lastWorkoutData: lastExercise,
+                scores: [],
+                totalScore: 0
               };
-            }),
-            lastWorkoutData: lastExercise // NEU: Speichere die letzten Daten für die Anzeige
-          };
-        });
+            } catch (err) {
+              console.error(`Fehler beim Laden von Exercise ${item.exerciseId}:`, err);
+              return {
+                exerciseId: item.exerciseId,
+                name: item.name || 'Unbekannte Übung',
+                sets: item.sets || 0,
+                repsMin: item.repsMin || 0,
+                repsMax: item.repsMax || 0,
+                factor: 0.1,
+                multiplier: 100,
+                setsData: Array.from({ length: item.sets }, (_, setIndex) => {
+                  const initialReps = Math.floor(((item.repsMin || 0) + (item.repsMax || 0)) / 2);
+                  return {
+                    reps: initialReps,
+                    weight: 0,
+                    completed: false,
+                    score: calculateScore(0, initialReps, 0.1, 100)
+                  };
+                }),
+                lastWorkoutData: null,
+                scores: [],
+                totalScore: 0
+              };
+            }
+          })
+        );
         
-        setWorkoutData(initialWorkoutData);
+        setWorkoutData(exercisesWithDetails);
       } else {
         console.error("Trainingsplan nicht gefunden");
         router.push("/workout/start");
@@ -156,11 +201,27 @@ export default function ActiveWorkoutPage() {
   };
 
   const handleExerciseComplete = (exerciseIndex: number, updatedSets: SetData[]) => {
-    const updatedWorkoutData = workoutData.map((exercise, index) => 
-      index === exerciseIndex 
-        ? { ...exercise, setsData: updatedSets }
-        : exercise
-    );
+    const updatedWorkoutData = workoutData.map((exercise, index) => {
+      if (index === exerciseIndex) {
+        // Berechne Scores für die aktualisierten Sets
+        const updatedSetsWithScores = updatedSets.map(set => ({
+          reps: set.reps || 0,
+          weight: set.weight || 0,
+          completed: set.completed || false,
+          score: set.score || calculateScore(set.weight || 0, set.reps || 0, exercise.factor, exercise.multiplier)
+        }));
+        
+        // Berechne Gesamt-Score für die Übung
+        const totalScore = updatedSetsWithScores.reduce((sum, set) => sum + (set.score || 0), 0);
+        
+        return {
+          ...exercise,
+          setsData: updatedSetsWithScores,
+          totalScore: totalScore
+        };
+      }
+      return exercise;
+    });
     
     setWorkoutData(updatedWorkoutData);
 
@@ -179,22 +240,90 @@ export default function ActiveWorkoutPage() {
 
   const handleSaveWorkout = async () => {
     const user = auth.currentUser;
-    if (!user || !plan) return;
+    if (!user || !plan) {
+      console.error("User oder Plan nicht verfügbar");
+      return;
+    }
 
     try {
-      await addDoc(collection(db, "users", user.uid, "workoutSessions"), {
+      // Tiefe Bereinigung aller Daten
+      const cleanedWorkoutData = workoutData.map(exercise => {
+        // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
+        const cleanedExercise = {
+          exerciseId: exercise.exerciseId || '',
+          name: exercise.name || 'Unbekannte Übung',
+          sets: exercise.sets || 0,
+          repsMin: exercise.repsMin || 0,
+          repsMax: exercise.repsMax || 0,
+          setsData: exercise.setsData?.map(set => ({
+            reps: Number(set.reps) || 0,
+            weight: Number(set.weight) || 0,
+            completed: Boolean(set.completed),
+            score: Number(set.score) || 0
+          })) || [],
+          factor: Number(exercise.factor) || 0.1,
+          multiplier: Number(exercise.multiplier) || 100,
+          scores: Array.isArray(exercise.scores) ? exercise.scores.map(s => Number(s) || 0) : [],
+          totalScore: Number(exercise.totalScore) || 0
+        };
+
+        return cleanedExercise;
+      });
+
+      // Validiere die Daten
+      const hasInvalidData = cleanedWorkoutData.some(exercise => 
+        !exercise.exerciseId || 
+        !exercise.name ||
+        exercise.setsData.some(set => 
+          set.reps === undefined || 
+          set.weight === undefined ||
+          set.score === undefined
+        )
+      );
+
+      if (hasInvalidData) {
+        console.error("Ungültige Daten gefunden:", cleanedWorkoutData);
+        alert("Fehler: Einige Workout-Daten sind ungültig. Bitte überprüfe deine Eingaben.");
+        return;
+      }
+
+      const totalWorkoutScore = cleanedWorkoutData.reduce((sum, exercise) => 
+        sum + (exercise.totalScore || 0), 0
+      );
+
+      // Finale Daten für Firestore
+      const workoutDataToSave = {
         planId: plan.id,
         planName: plan.name,
-        exercises: workoutData,
+        exercises: cleanedWorkoutData,
         startTime: serverTimestamp(),
         endTime: serverTimestamp(),
         completed: true,
-        userId: user.uid
-      });
+        userId: user.uid,
+        totalWorkoutScore: totalWorkoutScore
+      };
 
+      console.log("Speichere Workout mit Daten:", workoutDataToSave);
+
+      const docRef = await addDoc(
+        collection(db, "users", user.uid, "workoutSessions"), 
+        workoutDataToSave
+      );
+
+      console.log("Workout erfolgreich gespeichert mit ID:", docRef.id);
+      alert("Workout erfolgreich gespeichert! 🎉");
       router.push("/welcome");
-    } catch (err) {
+      
+    } catch (err: any) {
       console.error("Fehler beim Speichern des Workouts:", err);
+      
+      if (err.code === 'invalid-argument') {
+        alert("Fehler: Ungültige Daten im Workout. Bitte starte das Workout neu.");
+      } else if (err.code === 'permission-denied') {
+        alert("Berechtigungsfehler: Keine Berechtigung zum Speichern.");
+      } else {
+        alert("Speicherfehler: " + err.message);
+      }
     }
   };
 

@@ -6,6 +6,7 @@ interface SetData {
   reps: number;
   weight: number;
   completed: boolean;
+  score?: number;
 }
 
 interface ExerciseData {
@@ -15,7 +16,11 @@ interface ExerciseData {
   repsMin: number;
   repsMax: number;
   setsData: SetData[];
-  lastWorkoutData?: any; // Neue Property für letzte Workout-Daten
+  lastWorkoutData?: any;
+  factor: number;
+  multiplier: number;
+  scores: number[];
+  totalScore: number;
 }
 
 interface ActiveExerciseProps {
@@ -24,6 +29,12 @@ interface ActiveExerciseProps {
   totalExercises: number;
   onComplete: (exerciseIndex: number, setsData: SetData[]) => void;
 }
+
+// Score Berechnungsfunktion (muss hier auch verfügbar sein)
+const calculateScore = (weight: number, reps: number, factor: number, multiplier: number): number => {
+  const score = (weight * Math.exp(factor * reps)) * 100 / multiplier;
+  return Math.round(score * 100) / 100;
+};
 
 export default function ActiveExercise({ 
   exercise, 
@@ -41,10 +52,19 @@ export default function ActiveExercise({
 
   const handleSetUpdate = (setIndex: number, field: 'reps' | 'weight', value: number) => {
     const updatedSets = [...setsData];
+    const newValue = field === 'reps' ? Math.max(1, value) : Math.max(0, value);
+    
     updatedSets[setIndex] = {
       ...updatedSets[setIndex],
-      [field]: value
+      [field]: newValue,
+      score: calculateScore(
+        field === 'weight' ? newValue : updatedSets[setIndex].weight,
+        field === 'reps' ? newValue : updatedSets[setIndex].reps,
+        exercise.factor,
+        exercise.multiplier
+      )
     };
+    
     setSetsData(updatedSets);
   };
 
@@ -79,14 +99,13 @@ export default function ActiveExercise({
   };
 
   const handleQuickRepsAdjust = (amount: number) => {
-    handleSetUpdate(currentSetIndex, 'reps', Math.max(1, setsData[currentSetIndex].reps + amount));
+    handleSetUpdate(currentSetIndex, 'reps', setsData[currentSetIndex].reps + amount);
   };
 
   const handleQuickWeightAdjust = (amount: number) => {
-    handleSetUpdate(currentSetIndex, 'weight', Math.max(0, setsData[currentSetIndex].weight + amount));
+    handleSetUpdate(currentSetIndex, 'weight', setsData[currentSetIndex].weight + amount);
   };
 
-  // Funktion um letzte Workout-Daten zu übernehmen
   const useLastWorkoutData = () => {
     if (!exercise.lastWorkoutData) return;
     
@@ -96,7 +115,8 @@ export default function ActiveExercise({
         return {
           ...set,
           reps: lastSet.reps,
-          weight: lastSet.weight
+          weight: lastSet.weight,
+          score: calculateScore(lastSet.weight, lastSet.reps, exercise.factor, exercise.multiplier)
         };
       }
       return set;
@@ -107,10 +127,11 @@ export default function ActiveExercise({
 
   const allSetsCompleted = setsData.every(set => set.completed);
   const hasLastWorkoutData = exercise.lastWorkoutData;
+  const currentSetScore = setsData[currentSetIndex]?.score || 0;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mx-auto w-full max-w-md">
-      {/* Übungs-Header */}
+      {/* Übungs-Header mit Score Info */}
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-2 mb-2">
           <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full font-medium">
@@ -127,6 +148,15 @@ export default function ActiveExercise({
             Satz {currentSetIndex + 1}/{exercise.sets}
           </span>
         </div>
+        {/* Score Info */}
+        <div className="mt-2 bg-purple-50 border border-purple-200 rounded-lg p-2">
+          <div className="text-xs text-purple-700">
+            <span className="font-semibold">Aktueller Score:</span> {currentSetScore} 
+            <span className="text-purple-500 ml-2">
+              (Factor: {exercise.factor}, Multiplier: {exercise.multiplier})
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Letztes Workout Info */}
@@ -141,7 +171,10 @@ export default function ActiveExercise({
                 {exercise.lastWorkoutData.setsData.map((set: any, index: number) => (
                   <div key={index} className="flex justify-between">
                     <span>Satz {index + 1}:</span>
-                    <span className="font-medium">{set.reps} × {set.weight}kg</span>
+                    <span className="font-medium">
+                      {set.reps} × {set.weight}kg 
+                      <span className="text-blue-400 ml-1">(Score: {set.score})</span>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -162,6 +195,12 @@ export default function ActiveExercise({
           Satz {currentSetIndex + 1}
           {allSetsCompleted && " ✅"}
         </h3>
+
+        {/* Score Anzeige */}
+        <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 text-center">
+          <div className="text-sm font-semibold text-purple-800">Aktueller Satz Score</div>
+          <div className="text-2xl font-bold text-purple-600">{currentSetScore}</div>
+        </div>
 
         {/* Wiederholungen */}
         <div className="mb-6">
@@ -184,7 +223,6 @@ export default function ActiveExercise({
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 min="1"
               />
-              {/* Letzter Wert als kleine Info */}
               {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
                 <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">
                   Letztes: {exercise.lastWorkoutData.setsData[currentSetIndex].reps}
@@ -226,7 +264,6 @@ export default function ActiveExercise({
                 step="0.5"
                 min="0"
               />
-              {/* Letzter Wert als kleine Info */}
               {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
                 <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">
                   Letztes: {exercise.lastWorkoutData.setsData[currentSetIndex].weight}kg
@@ -283,10 +320,10 @@ export default function ActiveExercise({
         </div>
       </div>
 
-      {/* Sätze Übersicht */}
+      {/* Sätze Übersicht mit Scores */}
       <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-700 mb-3 text-center">Satz Fortschritt</h4>
-        <div className="grid grid-cols-3 gap-2">
+        <h4 className="text-sm font-medium text-gray-700 mb-3 text-center">Satz Fortschritt & Scores</h4>
+        <div className="grid grid-cols-2 gap-2">
           {setsData.map((set, index) => (
             <div
               key={index}
@@ -307,6 +344,11 @@ export default function ActiveExercise({
               ) : (
                 <div className="text-xs text-gray-400 mt-1">–</div>
               )}
+              <div className={`text-xs font-medium mt-1 ${
+                set.score && set.score > 0 ? 'text-purple-600' : 'text-gray-400'
+              }`}>
+                Score: {set.score || 0}
+              </div>
             </div>
           ))}
         </div>

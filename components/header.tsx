@@ -24,6 +24,7 @@ export default function Header() {
   const menuItems = [
     { href: "/trainingPlan", label: "Trainingspläne", icon: "/plan.png" },
     { href: "/exercise", label: "Übungen", icon: "/exercise.png" },
+    { href: "/statistics", label: "Statistiken", icon: "/stats.png" }, // NEU: Stats Icon
     { href: "/checkUserPage", label: "Benutzer", icon: "/user.png" },
   ];
 
@@ -40,7 +41,11 @@ export default function Header() {
         {/* Desktop Menu */}
         <nav className="hidden sm:flex items-center gap-6">
           {menuItems.map((item) => (
-            <Link key={item.href} href={item.href} className="flex items-center gap-1">
+            <Link 
+              key={item.href} 
+              href={item.href} 
+              className="flex items-center gap-1 hover:bg-gray-100 px-2 py-1 rounded-lg transition-colors"
+            >
               <Image
                 src={getAssetPath(item.icon)}
                 alt={item.label}
