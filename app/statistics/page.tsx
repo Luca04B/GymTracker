@@ -59,6 +59,10 @@ export default function StatisticsPage() {
     fetchWorkoutSessions();
   }, []);
 
+  const refreshWorkouts = () => {
+  fetchWorkoutSessions(); 
+  };
+
   const fetchWorkoutSessions = async () => {
     const user = auth.currentUser;
     if (!user) {
@@ -222,7 +226,10 @@ export default function StatisticsPage() {
               <ExerciseComparison workoutSessions={workoutSessions} />
             )}
             {activeTab === 'history' && (
-              <WorkoutHistory workoutSessions={workoutSessions} />
+             <WorkoutHistory 
+               workoutSessions={workoutSessions}
+              onWorkoutsUpdate={refreshWorkouts}
+            />
             )}
             {activeTab === 'records' && (
               <PersonalRecords workoutSessions={workoutSessions} />

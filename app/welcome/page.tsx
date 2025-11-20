@@ -5,6 +5,7 @@ import Link from "next/link";
 import UserProfileCard from "@/components/userProfileCard";
 import WeightChart from "@/components/weightChart";
 import MyExerciseList from "@/components/myExerciseList";
+import MiniStats from "@/components/statistics/miniStats"; 
 import { auth, db } from "@/lib/firebase";
 import { useEffect, useState } from "react";
 import { doc, getDoc, collection, query, where, orderBy, getDocs } from "firebase/firestore";
@@ -25,13 +26,23 @@ interface TrainingPlan {
   createdAt: any;
 }
 
+interface WorkoutSession {
+  id: string;
+  planName: string;
+  endTime: any;
+  totalWorkoutScore: number;
+  exercises: any[];
+}
+
 export default function WelcomePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [loadingExercises, setLoadingExercises] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingSessions, setLoadingSessions] = useState(true);
   const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
 
@@ -41,6 +52,7 @@ export default function WelcomePage() {
         setLoadingProfile(false);
         setLoadingExercises(false);
         setLoadingPlans(false);
+        setLoadingSessions(false);
         return;
       }
 
@@ -85,7 +97,7 @@ export default function WelcomePage() {
         setLoadingExercises(false);
       }
 
-      // Plan laden 
+      // Trainingspläne laden
       setLoadingPlans(true);
       try {
         const planSnap = await getDocs(collection(db, "users", user.uid, "trainingPlans"));
@@ -96,6 +108,25 @@ export default function WelcomePage() {
       } finally {
         setLoadingPlans(false);
       }
+
+      // Workout-Sessions laden für MiniStats
+      setLoadingSessions(true);
+      try {
+        const sessionsQuery = query(
+          collection(db, "users", user.uid, "workoutSessions"),
+          orderBy("endTime", "desc")
+        );
+        const sessionsSnap = await getDocs(sessionsQuery);
+        const sessionsData = sessionsSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        })) as WorkoutSession[];
+        setWorkoutSessions(sessionsData);
+      } catch (err) {
+        console.error("Fehler beim Laden der Workout-Sessions:", err);
+      } finally {
+        setLoadingSessions(false);
+      }
     });
 
     return () => unsubscribe();
@@ -104,6 +135,7 @@ export default function WelcomePage() {
   const goToUserInterface = () => router.push("/userInterface");
   const goToExercise = () => router.push("/exercise");
   const goToStartWorkout = () => router.push("/startWorkout");
+  const goToStatics = () => router.push("/statistics");
 
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden pb-10">
@@ -116,8 +148,7 @@ export default function WelcomePage() {
             Hier kannst du deine Trainingspläne anlegen, Workouts tracken und Statistiken deiner Übungen sehen.
           </p>
         </div>
-
-        {/* NEU: Workout starten Button - direkt nach der Begrüßung */}
+        {/* Workout starten Button */}
         {profile && trainingPlans.length > 0 && (
           <div className="flex justify-center">
             <div
@@ -140,14 +171,25 @@ export default function WelcomePage() {
 
         <div className="flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
           {/* Linke Seite: Diagramm */}
-          <div className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300 max-w-full">
+          <div className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl hover:-translate-y-1 transition-shadow duration-300 max-w-full">
             {measurements.length > 0 ? (
               <WeightChart measurements={measurements} />
             ) : (
               <p className="text-gray-500 text-center">Noch keine Messungen vorhanden.</p>
             )}
           </div>
-
+        {/* MiniStats Komponente */}
+          <div className="flex-1 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:-translate-y-1 hover:shadow-xl transition-shadow duration-300 min-h-[300px]">
+            {loadingSessions ? (
+              <div className="flex justify-center items-center h-full">
+                <LoadingSpinner message="Lade Statistiken..." />
+              </div>
+            ) : (
+              <div className=" cursor-pointer" onClick={goToStatics}>
+              <MiniStats workoutSessions={workoutSessions} />
+              </div>
+            )}
+          </div>
           {/* Rechte Seite: Identity Card */}
           {loadingProfile ? (
             <div className="w-full lg:w-80 flex justify-center items-center">
@@ -156,15 +198,16 @@ export default function WelcomePage() {
           ) : profile ? (
             <div className="w-full lg:w-100 max-w-full flex justify-center lg:justify-end">
               <div
-                className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer max-w-xs sm:max-w-full"
-                onClick={goToUserInterface}
+                className="bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 max-w-xs sm:max-w-full"
               >
+                <div className="cursor-pointer" onClick={goToUserInterface}>
                 <UserProfileCard
                   name={profile.name}
                   age={profile.age}
                   height={profile.height}
                   weight={measurements.length ? measurements[measurements.length - 1].weight : profile.weight}
                 />
+                </div>
               </div>
             </div>
           ) : null}
@@ -173,7 +216,7 @@ export default function WelcomePage() {
         {/* Trainingsplan & Übungen nebeneinander */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 text-gray-800">
           {/* Linke Spalte: Trainingspläne */}
-          <div className="flex-3 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:shadow-xl transition-shadow duration-300">
+          <div className="flex-3 bg-white shadow-md rounded-lg p-4 sm:p-6 hover:-translate-y-1 hover:shadow-xl transition-shadow duration-300">
             {loadingPlans ? (
               <div className="flex justify-center"><LoadingSpinner /></div>
             ) : (

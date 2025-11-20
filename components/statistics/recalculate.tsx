@@ -391,10 +391,6 @@ const applyChanges = async () => {
           <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
             {!recalculationComplete ? (
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl text-white">🔧</span>
-                </div>
-                
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">
                   {isRecalculating ? 'Berechne Workouts neu...' : 'Bereit für Neuberechnung'}
                 </h2>
@@ -405,15 +401,6 @@ const applyChanges = async () => {
                     : 'Diese Aktion wird alle vergangenen Workouts mit den aktuellen Factors und Multipliers neu berechnen.'
                   }
                 </p>
-
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 max-w-md mx-auto">
-                  <h4 className="font-semibold text-green-800 mb-2 text-sm">✅ Erweiterte Neuberechnung:</h4>
-                  <ul className="text-green-700 text-sm text-left space-y-1">
-                    <li>• <strong>Set-Score:</strong> (weight × Math.exp(factor × reps)) × 100 / multiplier</li>
-                    <li>• <strong>Aktuelle Factors/Multipliers</strong> werden angewendet</li>
-                  </ul>
-                </div>
-
                 {!isRecalculating && (
                   <button
                     onClick={recalculateAllScores}
@@ -433,10 +420,6 @@ const applyChanges = async () => {
               </div>
             ) : (
               <div className="text-center">
-                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl text-white">✅</span>
-                </div>
-                
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
                   Neuberechnung abgeschlossen!
                 </h2>
@@ -552,29 +535,12 @@ const applyChanges = async () => {
                         Speichern...
                       </div>
                     ) : (
-                      'Änderungen übernehmen ✅'
+                      'Änderungen übernehmen'
                     )}
                   </button>
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Info Box */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-blue-600 text-lg">💡</span>
-              <div>
-                <h4 className="font-semibold text-blue-800 mb-1">Erweiterte Berechnungslogik</h4>
-                <ul className="text-blue-700 text-sm space-y-1">
-                  <li><strong>Set-Score:</strong> (weight × Math.exp(factor × reps)) × 100 / multiplier</li>
-                  <li><strong>Aktuelle Factors/Multipliers:</strong> Werden automatisch auf alle Workouts angewendet</li>
-                  <li><strong>Detaillierte Tracking:</strong> Zeigt Änderungen an Factors, Multipliers und Scores pro Übung</li>
-                  <li><strong>Vollständige Konsistenz:</strong> Alle Workouts verwenden dieselbe aktuelle Formel</li>
-                  <li><strong>Datenbank-Synchronisation:</strong> Änderungen werden in Firebase gespeichert</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </div>
       </div>

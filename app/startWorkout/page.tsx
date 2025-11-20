@@ -205,6 +205,47 @@ export default function StartWorkoutPage() {
               </div>
             </div>
 
+            {/* Start Button */}
+            <div className="flex justify-center">
+              <button
+                onClick={handleStartWorkout}
+                className="bg-emerald-400 hover:bg-emerald-600 text-white px-12 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full md:w-auto min-w-[250px] flex items-center justify-center gap-3"
+              >
+                <span className="text-xl">🏋️</span>
+                Workout starten
+                <span className="text-xl">→</span>
+              </button>
+            </div>
+
+            {/* Zusammenfassung */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-8 mt-8">
+              <h3 className="font-semibold text-emerald-800 mb-4 text-lg">Workout Zusammenfassung</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-emerald-600">{selectedPlan.items.length}</div>
+                  <div className="text-emerald-700 text-sm">Übungen</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {selectedPlan.items.reduce((total, item) => total + item.sets, 0)}
+                  </div>
+                  <div className="text-emerald-700 text-sm">Gesamte Sätze</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {selectedPlan.items.reduce((total, item) => total + (item.repsMin + item.repsMax) / 2 * item.sets, 0).toFixed(0)}
+                  </div>
+                  <div className="text-emerald-700 text-sm">Ø Wiederholungen</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {calculateEstimatedTime(selectedPlan)}
+                  </div>
+                  <div className="text-emerald-700 text-sm">Geschätzte Minuten</div>
+                </div>
+              </div>
+            </div>
+            
             {/* Übungsliste */}
             <div className="space-y-4 mb-8">
               <h3 className="text-lg font-medium text-gray-700 mb-4">Übungsplan</h3>
@@ -238,47 +279,6 @@ export default function StartWorkoutPage() {
                   </div>
                 </div>
               ))}
-            </div>
-
-            {/* Zusammenfassung */}
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 mb-8">
-              <h3 className="font-semibold text-emerald-800 mb-4 text-lg">Workout Zusammenfassung</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-emerald-600">{selectedPlan.items.length}</div>
-                  <div className="text-emerald-700 text-sm">Übungen</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {selectedPlan.items.reduce((total, item) => total + item.sets, 0)}
-                  </div>
-                  <div className="text-emerald-700 text-sm">Gesamte Sätze</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {selectedPlan.items.reduce((total, item) => total + (item.repsMin + item.repsMax) / 2 * item.sets, 0).toFixed(0)}
-                  </div>
-                  <div className="text-emerald-700 text-sm">Ø Wiederholungen</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-emerald-600">
-                    {calculateEstimatedTime(selectedPlan)}
-                  </div>
-                  <div className="text-emerald-700 text-sm">Geschätzte Minuten</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Start Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={handleStartWorkout}
-                className="bg-emerald-400 hover:bg-emerald-600 text-white px-12 py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 w-full md:w-auto min-w-[250px] flex items-center justify-center gap-3"
-              >
-                <span className="text-xl">🏋️</span>
-                Workout starten
-                <span className="text-xl">→</span>
-              </button>
             </div>
           </div>
         )}
