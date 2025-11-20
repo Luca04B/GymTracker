@@ -109,8 +109,10 @@ export default function ActiveWorkoutPage() {
 
   const fetchTrainingPlan = async (planId: string) => {
     const user = auth.currentUser;
+
     if (!user) {
-      router.push("/login");
+      // Try again after a short delay
+      setTimeout(() => fetchTrainingPlan(planId), 500);
       return;
     }
 
@@ -353,7 +355,7 @@ export default function ActiveWorkoutPage() {
     <div className="min-h-screen bg-gray-50 safe-area-bottom">
       <Header />
 
-      <main className="mt-16 px-3 max-w-4xl mx-auto pb-6 safe-area-padding">
+      <main className="mt-30 px-3 max-w-4xl mx-auto pb-6 safe-area-padding">
         {/* Mobile-optimierter Header */}
         <div className="flex items-center justify-between mb-4">
           <button

@@ -1,7 +1,7 @@
 "use client";
 
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Header from "@/components/header";
@@ -13,17 +13,39 @@ import PersonalRecords from "@/components/statistics/personalRecords";
 import MonthlyProgress from "@/components/statistics/monthlyProgress";
 import ScoreDistribution from "@/components/statistics/scoreDistribution";
 import ExerciseProgressChart from "@/components/statistics/exerciseProgressChart";
+import RecalculateComponent from "@/components/statistics/recalculate";
+
+interface SetData {
+  reps: number;
+  weight: number;
+  completed: boolean;
+  score?: number;
+}
+
+interface ExerciseData {
+  exerciseId: string;
+  name: string;
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  setsData: SetData[];
+  factor: number;
+  multiplier: number;
+  scores: number[];
+  totalScore: number;
+}
 
 interface WorkoutSession {
   id: string;
   planId: string;
   planName: string;
-  exercises: any[];
+  exercises: ExerciseData[];
   startTime: any;
   endTime: any;
   completed: boolean;
   userId: string;
   totalWorkoutScore: number;
+  date?: string;
 }
 
 export default function StatisticsPage() {
@@ -31,7 +53,8 @@ export default function StatisticsPage() {
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'week' | 'month' | 'all'>('month');
-  const [activeTab, setActiveTab] = useState<'progress' | 'comparison' | 'history' | 'records' | 'monthly' | 'distribution' | 'exerciseProgress'>('progress');
+  const [activeTab, setActiveTab] = useState<'progress' | 'comparison' | 'history' | 'records' | 'monthly' | 'distribution' | 'exerciseProgress' | 'recalculate'>('progress');
+
   useEffect(() => {
     fetchWorkoutSessions();
   }, []);
@@ -39,7 +62,10 @@ export default function StatisticsPage() {
   const fetchWorkoutSessions = async () => {
     const user = auth.currentUser;
     if (!user) {
-      router.push("/login");
+      setTimeout(() => {
+        fetchWorkoutSessions();
+      }, 500);
+
       return;
     }
 
@@ -53,9 +79,11 @@ export default function StatisticsPage() {
       const sessionsData: WorkoutSession[] = [];
       
       querySnapshot.forEach((doc) => {
+        const data = doc.data();
         sessionsData.push({
           id: doc.id,
-          ...doc.data()
+          ...data,
+          date: data.date || data.endTime?.toDate?.()?.toISOString() || new Date().toISOString()
         } as WorkoutSession);
       });
       
@@ -66,6 +94,37 @@ export default function StatisticsPage() {
       setLoading(false);
     }
   };
+
+  // Fehlende Funktion hinzufügen
+  const handleUpdateWorkoutSessions = (updatedSessions: WorkoutSession[]) => {
+    setWorkoutSessions(updatedSessions);
+    console.log("Workout-Sessions wurden aktualisiert:", updatedSessions);
+  };
+  
+  // Time Range Selector Component
+  function TimeRangeSelector({ value, onChange }: { value: string; onChange: (value: 'week' | 'month' | 'all') => void }) {
+    return (
+      <div className="flex bg-gray-100 rounded-lg p-1">
+        {[
+          { value: 'week', label: '1 Woche' },
+          { value: 'month', label: '1 Monat' },
+          { value: 'all', label: 'Alle Zeit' },
+        ].map((option) => (
+          <button
+            key={option.value}
+            onClick={() => onChange(option.value as any)}
+            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+              value === option.value
+                ? 'bg-white text-gray-800 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -129,6 +188,7 @@ export default function StatisticsPage() {
               { id: 'records', label: 'Personal Records' },
               { id: 'monthly', label: 'Monatlicher Fortschritt'},
               { id: 'distribution', label: 'Score Verteilung' },
+              { id: 'recalculate', label: 'Neu Berechnen' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -174,36 +234,18 @@ export default function StatisticsPage() {
               <ScoreDistribution workoutSessions={workoutSessions} />
             )}
             {activeTab === 'exerciseProgress' && (
-            <ExerciseProgressChart workoutSessions={workoutSessions} />
+              <ExerciseProgressChart workoutSessions={workoutSessions} />
+            )}
+            {activeTab === 'recalculate' && (
+              <RecalculateComponent 
+                workoutSessions={workoutSessions}
+                onUpdateWorkoutSessions={handleUpdateWorkoutSessions}
+                onBack={() => setActiveTab('progress')}
+              />
             )}
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-
-// Time Range Selector Component
-function TimeRangeSelector({ value, onChange }: { value: string; onChange: (value: 'week' | 'month' | 'all') => void }) {
-  return (
-    <div className="flex bg-gray-100 rounded-lg p-1">
-      {[
-        { value: 'week', label: '1 Woche' },
-        { value: 'month', label: '1 Monat' },
-        { value: 'all', label: 'Alle Zeit' },
-      ].map((option) => (
-        <button
-          key={option.value}
-          onClick={() => onChange(option.value as any)}
-          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-            value === option.value
-              ? 'bg-white text-gray-800 shadow-sm'
-              : 'text-gray-600 hover:text-gray-800'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
     </div>
   );
 }

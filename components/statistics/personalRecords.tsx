@@ -2,20 +2,38 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
+
+interface SetData {
+  reps: number;
+  weight: number;
+  completed: boolean;
+  score?: number;
+}
+
+interface ExerciseData {
+  exerciseId: string;
+  name: string;
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  setsData: SetData[];
+  factor: number;
+  multiplier: number;
+  scores: number[];
+  totalScore: number;
+}
+
 interface WorkoutSession {
   id: string;
-  planName: string; // Hier ist es planName (kleingeschrieben)
-  exercises: Array<{
-    exerciseId: string;
-    name: string;
-    totalScore: number;
-    setsData: Array<{
-      weight: number;
-      reps: number;
-      score: number;
-    }>;
-  }>;
+  planId: string;
+  planName: string;
+  exercises: ExerciseData[];
+  startTime: any;
   endTime: any;
+  completed: boolean;
+  userId: string;
+  totalWorkoutScore: number;
+  date?: string;
 }
 
 interface PersonalRecordsProps {

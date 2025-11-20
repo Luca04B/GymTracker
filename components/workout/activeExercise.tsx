@@ -52,14 +52,13 @@ export default function ActiveExercise({
 
   const handleSetUpdate = (setIndex: number, field: 'reps' | 'weight', value: number) => {
     const updatedSets = [...setsData];
-    const newValue = field === 'reps' ? Math.max(1, value) : Math.max(0, value);
     
     updatedSets[setIndex] = {
       ...updatedSets[setIndex],
-      [field]: newValue,
+      [field]: value,
       score: calculateScore(
-        field === 'weight' ? newValue : updatedSets[setIndex].weight,
-        field === 'reps' ? newValue : updatedSets[setIndex].reps,
+        field === 'weight' ? value : updatedSets[setIndex].weight,
+        field === 'reps' ? value : updatedSets[setIndex].reps,
         exercise.factor,
         exercise.multiplier
       )
@@ -179,12 +178,6 @@ export default function ActiveExercise({
                 ))}
               </div>
             </div>
-            <button
-              onClick={useLastWorkoutData}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium ml-2 touch-target active:scale-95 whitespace-nowrap"
-            >
-              Übernehmen
-            </button>
           </div>
         </div>
       )}
@@ -218,10 +211,12 @@ export default function ActiveExercise({
             <div className="flex-1 relative">
               <input
                 type="number"
-                value={setsData[currentSetIndex].reps}
-                onChange={(e) => handleSetUpdate(currentSetIndex, 'reps', parseInt(e.target.value) || 0)}
+                value={setsData[currentSetIndex].reps === 0 ? "" : setsData[currentSetIndex].reps}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleSetUpdate(currentSetIndex, 'reps', value === "" ? 0 : parseInt(value) || 0);
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                min="1"
               />
               {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
                 <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">
@@ -258,11 +253,13 @@ export default function ActiveExercise({
             <div className="flex-1 relative">
               <input
                 type="number"
-                value={setsData[currentSetIndex].weight}
-                onChange={(e) => handleSetUpdate(currentSetIndex, 'weight', parseFloat(e.target.value) || 0)}
+                value={setsData[currentSetIndex].weight === 0 ? "" : setsData[currentSetIndex].weight}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleSetUpdate(currentSetIndex, 'weight', value === "" ? 0 : parseFloat(value) || 0);
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 step="0.5"
-                min="0"
               />
               {hasLastWorkoutData && exercise.lastWorkoutData.setsData[currentSetIndex] && (
                 <div className="absolute -bottom-5 left-0 right-0 text-xs text-blue-500 text-center">

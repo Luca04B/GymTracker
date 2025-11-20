@@ -37,7 +37,19 @@ export default function WorkoutSummary({
   const completedSets = workoutData.reduce((total, exercise) => 
     total + exercise.setsData.filter(set => set.completed).length, 0
   );
-  const totalWorkoutScore = workoutData.reduce((total, exercise) => total + exercise.totalScore, 0);
+  
+  
+ const totalWorkoutScore = (() => {
+    const totalCompletedScore = workoutData.reduce((total, exercise) => 
+      total + exercise.setsData
+        .filter(set => set.completed)
+        .reduce((sum, set) => sum + (set.score || 0), 0), 0
+    );
+    
+    const totalSetsInWorkout = workoutData.reduce((total, exercise) => total + exercise.sets, 0);
+    
+    return totalSetsInWorkout > 0 ? totalCompletedScore / totalSetsInWorkout : 0;
+  })(); 
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -75,54 +87,67 @@ export default function WorkoutSummary({
       {/* Übungsdetails mit Scores */}
       <div className="space-y-6 mb-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Übungsdetails & Scores</h3>
-        {workoutData.map((exercise, exerciseIndex) => (
-          <div key={exerciseIndex} className="border border-gray-200 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-semibold text-gray-800 text-lg">{exercise.name}</h4>
-                <div className="text-sm text-gray-600">
-                  Factor: {exercise.factor} | Multiplier: {exercise.multiplier}
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                  Score: {exercise.totalScore.toFixed(1)}
-                </div>
-                <button
-                  onClick={() => onEditExercise(exerciseIndex)}
-                  className="bg-sky-600 hover:bg-sky-800 text-white px-3 py-1 rounded text-sm transition-colors"
-                >
-                  Bearbeiten
-                </button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {exercise.setsData.map((set, setIndex) => (
-                <div
-                  key={setIndex}
-                  className={`p-3 rounded text-center ${
-                    set.completed ? 'bg-green-100 border border-green-300' : 'bg-gray-100'
-                  }`}
-                >
-                  <div className="font-medium">Satz {setIndex + 1}</div>
-                  {set.completed ? (
-                    <div className="text-sm text-gray-700">
-                      {set.reps} × {set.weight}kg
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500">Nicht completed</div>
-                  )}
-                  <div className={`text-sm font-medium mt-1 ${
-                    set.score && set.score > 0 ? 'text-purple-600' : 'text-gray-400'
-                  }`}>
-                    Score: {set.score?.toFixed(1) || 0}
+        {workoutData.map((exercise, exerciseIndex) => {
+          // Berechne den durchschnittlichen Score für diese Übung basierend auf completed Sets
+          const exerciseCompletedSets = exercise.setsData.filter(set => set.completed).length;
+          const exerciseTotalScore = exercise.setsData
+            .filter(set => set.completed)
+            .reduce((sum, set) => sum + (set.score || 0), 0);
+          
+          // Teile den Gesamt-Score der Übung durch die Anzahl der Sätze
+          const exerciseScorePerSet = exercise.sets > 0 ? exerciseTotalScore / exercise.sets : 0;
+          const exerciseAverageScore = exerciseCompletedSets > 0 ? exerciseTotalScore / exerciseCompletedSets : 0;
+
+          return (
+            <div key={exerciseIndex} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-lg">{exercise.name}</h4>
+                  <div className="text-sm text-gray-600">
+                    {exerciseCompletedSets}/{exercise.sets} Sätze completed | 
+                    Factor: {exercise.factor} | Multiplier: {exercise.multiplier}
                   </div>
                 </div>
-              ))}
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                    Ø Score: {exerciseAverageScore.toFixed(1)}
+                  </div>
+                  <button
+                    onClick={() => onEditExercise(exerciseIndex)}
+                    className="bg-sky-600 hover:bg-sky-800 text-white px-3 py-1 rounded text-sm transition-colors"
+                  >
+                    Bearbeiten
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {exercise.setsData.map((set, setIndex) => (
+                  <div
+                    key={setIndex}
+                    className={`p-3 rounded text-center ${
+                      set.completed ? 'bg-green-100 border border-green-300' : 'bg-gray-100'
+                    }`}
+                  >
+                    <div className="font-medium">Satz {setIndex + 1}</div>
+                    {set.completed ? (
+                      <div className="text-sm text-gray-700">
+                        {set.reps} × {set.weight}kg
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">Nicht completed</div>
+                    )}
+                    <div className={`text-sm font-medium mt-1 ${
+                      set.score && set.score > 0 ? 'text-purple-600' : 'text-gray-400'
+                    }`}>
+                      Score: {set.score?.toFixed(1) || 0}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Action Buttons */}

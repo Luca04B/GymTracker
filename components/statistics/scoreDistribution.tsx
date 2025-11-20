@@ -15,11 +15,15 @@ interface ScoreDistributionProps {
 export default function ScoreDistribution({ workoutSessions }: ScoreDistributionProps) {
   // Score ranges
   const scoreRanges = [
-    { range: '1000-1250', min: 1000, max: 1250, color: '#ef4444' },
-    { range: '1250-1500', min: 1250, max: 1500, color: '#f59e0b' },
-    { range: '1500-1750', min: 1500, max: 1750, color: '#10b981' },
-    { range: '1750-2000', min: 1750, max: 2000, color: '#3b82f6' },
-    { range: '2000+', min: 2000, max: Infinity, color: '#8b5cf6' },
+    { range: '0-50', min: 0, max: 50, color: '#ef4444' },
+    { range: '50-100', min: 50, max: 100, color: '#f59e0b' },
+    { range: '100-150', min: 100, max: 150, color: '#10b981' },
+    { range: '150-200', min: 150, max: 200, color: '#3b82f6' },
+    { range: '200-250', min: 200, max: 250, color: '#8b5cf6' },
+    { range: '250-300', min: 250, max: 300, color: '#ec4899' },
+    { range: '300-350', min: 300, max: 350, color: '#f97316' },
+    { range: '350-400', min: 350, max: 400, color: '#84cc16' },
+    { range: '400+', min: 400, max: Infinity, color: '#06b6d4' },
   ];
 
   // Count workouts in each range
@@ -30,6 +34,9 @@ export default function ScoreDistribution({ workoutSessions }: ScoreDistribution
     ).length,
     color: range.color
   }));
+
+  // Filter out ranges with 0 values for the pie chart to avoid 100% display issues
+  const filteredRangeData = rangeData.filter(item => item.value > 0);
 
   // Top exercises by average score
   const exerciseScores: { [key: string]: { name: string; scores: number[]; avgScore: number } } = {};
@@ -101,7 +108,7 @@ export default function ScoreDistribution({ workoutSessions }: ScoreDistribution
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={rangeData}
+                  data={filteredRangeData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -110,7 +117,7 @@ export default function ScoreDistribution({ workoutSessions }: ScoreDistribution
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {rangeData.map((entry, index) => (
+                  {filteredRangeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
